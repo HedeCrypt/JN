@@ -1,297 +1,254 @@
 <!DOCTYPE html>
-<html lang="da">
+<html lang="en">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Oraklet</title>
+<title>The Oracle</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Syne:wght@400;600;700;800&family=Playfair+Display:ital,wght@0,900;1,900&display=swap" rel="stylesheet"/>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   :root {
-    --bg:      #0c0c0b;
-    --surface: #141413;
-    --surface2:#1c1c1a;
-    --border:  #272724;
-    --border2: #333330;
-    --text:    #e4e2dc;
-    --muted:   #6b6b65;
-    --faint:   #3a3a36;
-    --yes:     #1d9e75;
-    --yes-dim: #0f5c44;
-    --yes-bg:  rgba(29,158,117,.08);
-    --no:      #d85a30;
-    --no-dim:  #7a3019;
-    --no-bg:   rgba(216,90,48,.08);
-    --amber:   #ba7517;
-    --amber-dim:#7a4d0e;
-    --mono:    'DM Mono', monospace;
-    --serif:   'Playfair Display', serif;
-    --sans:    'Syne', sans-serif;
-    --r:       10px;
+    --bg:#0c0c0b; --surface:#141413; --surface2:#1c1c1a;
+    --border:#272724; --border2:#333330; --text:#e4e2dc; --muted:#6b6b65; --faint:#3a3a36;
+    --yes:#1d9e75; --yes-dim:#0f5c44; --yes-bg:rgba(29,158,117,.08);
+    --no:#d85a30; --no-dim:#7a3019; --no-bg:rgba(216,90,48,.08);
+    --amber:#ba7517; --amber-dim:#7a4d0e;
+    --mono:'DM Mono',monospace; --serif:'Playfair Display',serif; --sans:'Syne',sans-serif; --r:10px;
   }
+  html { background:var(--bg); color:var(--text); font-family:var(--sans); min-height:100vh; }
+  body { max-width:720px; margin:0 auto; padding:2rem 1.25rem 5rem; }
 
-  html { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; }
-  body { max-width: 720px; margin: 0 auto; padding: 2rem 1.25rem 5rem; }
+  header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:2.5rem; }
+  .site-title { font-size:13px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+  .tagline { font-family:var(--mono); font-size:10px; color:var(--muted); margin-top:4px; font-style:italic; }
+  .counter-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:4px; text-align:right; }
+  .counter-val { font-family:var(--mono); font-size:13px; color:var(--yes); border:.5px solid var(--yes-dim); border-radius:4px; padding:2px 8px; display:inline-block; }
 
-  /* ── Header ── */
-  header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2.5rem; }
-  .site-title { font-size: 13px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
-  .tagline { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 4px; font-style: italic; }
-  .counter-wrap { text-align: right; }
-  .counter-label { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
-  .counter-val { font-family: var(--mono); font-size: 13px; color: var(--yes); border: .5px solid var(--yes-dim); border-radius: 4px; padding: 2px 8px; display: inline-block; }
+  .card { background:var(--surface); border:.5px solid var(--border); border-radius:var(--r); padding:1.5rem; margin-bottom:1rem; }
+  .section-title { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:14px; }
 
-  /* ── Cards ── */
-  .card { background: var(--surface); border: .5px solid var(--border); border-radius: var(--r); padding: 1.5rem; margin-bottom: 1rem; }
-  .section-title { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
-
-  /* ── Input ── */
   input[type=text] {
-    width: 100%; font-family: var(--sans); font-size: 15px; padding: 13px 16px;
-    background: var(--surface2); border: .5px solid var(--border2); border-radius: 8px;
-    color: var(--text); outline: none; transition: border-color .15s; margin-bottom: 1rem;
+    width:100%; font-family:var(--sans); font-size:15px; padding:13px 16px;
+    background:var(--surface2); border:.5px solid var(--border2); border-radius:8px;
+    color:var(--text); outline:none; transition:border-color .15s; margin-bottom:1rem;
   }
-  input[type=text]:focus { border-color: var(--faint); }
-  input[type=text]::placeholder { color: var(--muted); }
+  input[type=text]:focus { border-color:var(--faint); }
+  input[type=text]::placeholder { color:var(--muted); }
 
-  /* ── Answer ── */
-  .answer-wrap { text-align: center; padding: 2rem 0 1.75rem; }
+  /* Mode selector */
+  .mode-row { display:flex; gap:10px; align-items:center; margin-bottom:1rem; }
+  .mode-label { font-family:var(--mono); font-size:10px; color:var(--muted); white-space:nowrap; letter-spacing:.1em; text-transform:uppercase; }
+  select {
+    flex:1; font-family:var(--mono); font-size:12px; padding:9px 12px;
+    background:var(--surface2); border:.5px solid var(--border2); border-radius:8px;
+    color:var(--text); outline:none; cursor:pointer; appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236b6b65'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 12px center;
+    transition:border-color .15s;
+  }
+  select:hover { border-color:var(--faint); }
+  select:focus { border-color:var(--faint); }
+  select option { background:#1c1c1a; }
+
+  .answer-wrap { text-align:center; padding:2rem 0 1.75rem; }
   .answer-main {
-    font-family: var(--serif); font-size: 96px; font-weight: 900; line-height: 1;
-    letter-spacing: -.02em; min-height: 100px;
-    display: flex; align-items: center; justify-content: center;
+    font-family:var(--serif); font-weight:900; line-height:1.1;
+    letter-spacing:-.01em; min-height:100px; display:flex; align-items:center; justify-content:center;
+    text-align:center; padding:0 1rem; transition:font-size .2s;
   }
-  .answer-main.neutral { color: var(--faint); }
-  .answer-main.yes { color: var(--yes); }
-  .answer-main.no  { color: var(--no); }
-  .answer-q { font-size: 13px; color: var(--muted); margin-top: 10px; min-height: 20px; font-style: italic; }
+  .answer-main.size-xl { font-size:96px; }
+  .answer-main.size-lg { font-size:48px; }
+  .answer-main.size-md { font-size:34px; }
+  .answer-main.size-sm { font-size:26px; }
+  .answer-main.neutral { color:var(--faint); }
+  .answer-main.yes     { color:var(--yes); }
+  .answer-main.no      { color:var(--no); }
+  .answer-main.maybe   { color:var(--amber); }
+  .answer-q { font-size:13px; color:var(--muted); margin-top:10px; min-height:20px; font-style:italic; }
 
-  /* ── Button ── */
+  /* Answer category pip */
+  .answer-cat { font-family:var(--mono); font-size:10px; letter-spacing:.12em; text-transform:uppercase; margin-top:8px; min-height:14px; }
+  .answer-cat.yes   { color:var(--yes-dim); }
+  .answer-cat.no    { color:var(--no-dim); }
+  .answer-cat.maybe { color:var(--amber-dim); }
+
   .btn {
-    width: 100%; font-family: var(--sans); font-size: 13px; font-weight: 700;
-    letter-spacing: .1em; text-transform: uppercase;
-    background: transparent; border: 1px solid var(--border2); border-radius: 8px;
-    color: var(--text); padding: 14px; cursor: pointer;
-    transition: background .15s, border-color .15s, transform .08s;
+    width:100%; font-family:var(--sans); font-size:13px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+    background:transparent; border:1px solid var(--border2); border-radius:8px;
+    color:var(--text); padding:14px; cursor:pointer; transition:background .15s, border-color .15s, transform .08s;
   }
-  .btn:hover { background: var(--surface2); border-color: var(--faint); }
-  .btn:active { transform: scale(.98); }
-  .btn:disabled { opacity: .3; cursor: not-allowed; transform: none; }
+  .btn:hover { background:var(--surface2); border-color:var(--faint); }
+  .btn:active { transform:scale(.98); }
+  .btn:disabled { opacity:.3; cursor:not-allowed; transform:none; }
 
-  /* ── Status ── */
-  .status { font-family: var(--mono); font-size: 11px; color: var(--muted); text-align: center; margin-top: 10px; min-height: 16px; }
+  .status { font-family:var(--mono); font-size:11px; color:var(--muted); text-align:center; margin-top:10px; min-height:16px; }
 
-  /* ── Spinner ── */
-  .spinner {
-    display: inline-block; width: 48px; height: 48px;
-    border: 2px solid var(--faint); border-top-color: var(--muted);
-    border-radius: 50%; animation: spin .7s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner { display:inline-block; width:48px; height:48px; border:2px solid var(--faint); border-top-color:var(--muted); border-radius:50%; animation:spin .7s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
 
-  /* ── Expandable hash field ── */
-  .field-row {
-    margin-bottom: 12px;
-  }
-  .field-key {
-    font-family: var(--mono); font-size: 10px; color: var(--muted);
-    margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center;
-  }
+  .field-row { margin-bottom:12px; }
+  .field-key { font-family:var(--mono); font-size:10px; color:var(--muted); margin-bottom:4px; display:flex; justify-content:space-between; align-items:center; }
   .copy-btn {
-    background: none; border: .5px solid var(--border2); border-radius: 4px;
-    font-family: var(--mono); font-size: 10px; color: var(--muted);
-    padding: 2px 7px; cursor: pointer; transition: color .12s, border-color .12s;
-    display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+    background:none; border:.5px solid var(--border2); border-radius:4px; font-family:var(--mono); font-size:10px; color:var(--muted);
+    padding:2px 7px; cursor:pointer; transition:color .12s, border-color .12s; display:inline-flex; align-items:center; gap:4px; white-space:nowrap;
   }
-  .copy-btn:hover { color: var(--text); border-color: var(--faint); }
-  .copy-btn.copied { color: var(--yes); border-color: var(--yes-dim); }
-
+  .copy-btn:hover { color:var(--text); border-color:var(--faint); }
+  .copy-btn.copied { color:var(--yes); border-color:var(--yes-dim); }
   .field-val {
-    font-family: var(--mono); font-size: 11px; color: var(--text);
-    background: var(--surface2); border: .5px solid var(--border);
-    border-radius: 6px; padding: 8px 10px; cursor: pointer;
-    word-break: break-all; line-height: 1.7;
-    transition: border-color .12s, background .12s;
-    position: relative;
+    font-family:var(--mono); font-size:11px; color:var(--text); background:var(--surface2); border:.5px solid var(--border);
+    border-radius:6px; padding:8px 10px; cursor:pointer; word-break:break-all; line-height:1.7; transition:border-color .12s, background .12s;
   }
-  .field-val:hover { border-color: var(--border2); background: #202020; }
-  .field-val.truncated { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; word-break: normal; }
-  .field-val.expanded { white-space: normal; word-break: break-all; }
-  .expand-hint {
-    font-family: var(--mono); font-size: 9px; color: var(--muted);
-    margin-top: 3px; text-align: right;
-  }
+  .field-val:hover { border-color:var(--border2); background:#202020; }
+  .field-val.truncated { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; word-break:normal; }
+  .field-val.expanded  { white-space:normal; word-break:break-all; }
+  .expand-hint { font-family:var(--mono); font-size:9px; color:var(--muted); margin-top:3px; text-align:right; }
 
-  /* ── Info grid ── */
-  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 24px; margin-bottom: 14px; }
-  .info-item .field-key { margin-bottom: 3px; }
-  .info-item .field-val { font-size: 12px; padding: 6px 10px; }
+  .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 24px; margin-bottom:14px; }
+  .info-item .field-key { margin-bottom:3px; }
+  .info-item .field-val { font-size:12px; padding:6px 10px; }
 
-  /* ── Source badge ── */
-  .src-badge { font-family: var(--mono); font-size: 10px; padding: 2px 8px; border-radius: 4px; border: .5px solid; display: inline-block; }
-  .src-bf    { border-color: var(--yes-dim); color: var(--yes); }
-  .src-koios { border-color: var(--yes-dim); color: var(--yes); }
-  .src-local { border-color: var(--amber-dim); color: var(--amber); }
+  .src-badge { font-family:var(--mono); font-size:10px; padding:2px 8px; border-radius:4px; border:.5px solid; display:inline-block; }
+  .src-bf    { border-color:var(--yes-dim); color:var(--yes); }
+  .src-koios { border-color:var(--yes-dim); color:var(--yes); }
+  .src-local { border-color:var(--amber-dim); color:var(--amber); }
 
-  /* ── Toggle button ── */
-  .tog-btn { background: none; border: none; cursor: pointer; font-family: var(--mono); font-size: 11px; color: var(--muted); padding: 8px 0; text-align: left; transition: color .12s; display: block; }
-  .tog-btn:hover { color: var(--text); }
-  hr.div { border: none; border-top: .5px solid var(--border); margin: 12px 0; }
+  .tog-btn { background:none; border:none; cursor:pointer; font-family:var(--mono); font-size:11px; color:var(--muted); padding:8px 0; text-align:left; transition:color .12s; display:block; }
+  .tog-btn:hover { color:var(--text); }
+  hr.div { border:none; border-top:.5px solid var(--border); margin:12px 0; }
 
-  /* ── Merkle Tree SVG ── */
-  #merkle-svg-wrap {
-    overflow-x: auto; margin: 10px 0;
-    scrollbar-width: thin; scrollbar-color: var(--faint) transparent;
-  }
-  .merkle-node { cursor: pointer; }
-  .merkle-node rect { transition: opacity .12s; }
-  .merkle-node:hover rect { opacity: .8; }
+  #merkle-svg-wrap { overflow-x:auto; margin:10px 0; scrollbar-width:thin; scrollbar-color:var(--faint) transparent; }
+  .merkle-node { cursor:pointer; }
+  .merkle-node:hover rect { opacity:.8; }
 
-  /* ── Bit row ── */
-  .bit-row { display: flex; gap: 2px; flex-wrap: wrap; margin-top: 6px; }
-  .bit { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
-  .b1 { background: var(--yes); }
-  .b0 { background: var(--surface2); border: .5px solid var(--border2); }
-  .bit-info { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 6px; }
+  .bit-row { display:flex; gap:2px; flex-wrap:wrap; margin-top:6px; }
+  .bit { width:9px; height:9px; border-radius:2px; flex-shrink:0; }
+  .b1 { background:var(--yes); }
+  .b0 { background:var(--surface2); border:.5px solid var(--border2); }
+  .bit-info { font-family:var(--mono); font-size:10px; color:var(--muted); margin-top:6px; }
 
-  /* ── Verify export ── */
   .verify-block {
-    background: var(--surface2); border: .5px solid var(--border2);
-    border-radius: 6px; padding: 10px 12px;
-    font-family: var(--mono); font-size: 10px; color: var(--muted);
-    white-space: pre-wrap; word-break: break-all; line-height: 1.8;
-    margin-top: 8px;
+    background:var(--surface2); border:.5px solid var(--border2); border-radius:6px; padding:10px 12px;
+    font-family:var(--mono); font-size:10px; color:var(--muted); white-space:pre-wrap; word-break:break-all; line-height:1.8; margin-top:8px;
   }
 
-  /* ── History ── */
-  .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-  .btn-clear { background: none; border: .5px solid var(--no-dim); border-radius: 6px; font-family: var(--mono); font-size: 11px; color: var(--no); padding: 5px 12px; cursor: pointer; transition: background .12s; }
-  .btn-clear:hover { background: var(--no-bg); }
+  /* History */
+  .history-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .btn-clear { background:none; border:.5px solid var(--no-dim); border-radius:6px; font-family:var(--mono); font-size:11px; color:var(--no); padding:5px 12px; cursor:pointer; transition:background .12s; }
+  .btn-clear:hover { background:var(--no-bg); }
+  .hgroup { border-bottom:.5px solid var(--border); padding:12px 0; }
+  .hgroup:last-child { border-bottom:none; }
+  .hprimary { display:flex; align-items:flex-start; gap:12px; cursor:pointer; }
+  .hprimary:hover .hq { text-decoration:underline; text-decoration-color:var(--faint); }
+  .hist-ans { font-family:var(--serif); font-size:22px; font-weight:900; min-width:42px; margin-top:1px; flex-shrink:0; }
+  .hist-ans.yes { color:var(--yes); } .hist-ans.no { color:var(--no); }
+  .hq { font-size:13px; color:var(--text); line-height:1.4; }
+  .hmeta { font-family:var(--mono); font-size:10px; color:var(--muted); margin-top:3px; line-height:1.8; }
+  .hactions { display:flex; gap:6px; align-items:center; flex-shrink:0; margin-left:auto; opacity:0; transition:opacity .15s; }
+  .hprimary:hover .hactions { opacity:1; }
+  .btn-del { background:none; border:.5px solid var(--no-dim); border-radius:4px; font-family:var(--mono); font-size:10px; color:var(--no); padding:2px 7px; cursor:pointer; transition:background .1s; white-space:nowrap; }
+  .btn-del:hover { background:var(--no-bg); }
+  .btn-expand { background:none; border:.5px solid var(--border2); border-radius:4px; font-family:var(--mono); font-size:10px; color:var(--muted); padding:2px 7px; cursor:pointer; transition:background .1s; white-space:nowrap; }
+  .btn-expand:hover { background:var(--surface2); color:var(--text); }
+  .hdetail { display:none; margin-top:10px; margin-left:54px; }
+  .hgroup.open .hdetail { display:block; }
+  .hprev-list { display:none; margin-top:8px; margin-left:54px; border-left:1px solid var(--border); padding-left:12px; }
+  .hgroup.prev-open .hprev-list { display:block; }
+  .hprev-item { display:flex; align-items:flex-start; gap:8px; padding:7px 0; border-bottom:.5px solid var(--border); }
+  .hprev-item:last-child { border-bottom:none; }
+  .hprev-ans { font-family:var(--serif); font-size:15px; font-weight:900; min-width:30px; flex-shrink:0; }
+  .hprev-ans.yes { color:var(--yes); } .hprev-ans.no { color:var(--no); }
+  .hprev-meta { font-family:var(--mono); font-size:10px; color:var(--muted); line-height:1.8; flex:1; min-width:0; }
+  .hprev-actions { opacity:0; transition:opacity .12s; flex-shrink:0; }
+  .hprev-item:hover .hprev-actions { opacity:1; }
 
-  /* Group = one unique question */
-  .hgroup { border-bottom: .5px solid var(--border); padding: 12px 0; }
-  .hgroup:last-child { border-bottom: none; }
+  /* How it works */
+  .how-card { margin-top:2rem; }
+  .how-title { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:1.5rem; }
+  .step { display:flex; gap:16px; margin-bottom:1.25rem; }
+  .step:last-child { margin-bottom:0; }
+  .step-num {
+    font-family:var(--mono); font-size:11px; color:var(--yes); border:.5px solid var(--yes-dim);
+    border-radius:4px; width:24px; height:24px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px;
+  }
+  .step-body { flex:1; min-width:0; }
+  .step-head { font-size:13px; font-weight:600; color:var(--text); margin-bottom:5px; line-height:1.4; }
+  .step-desc { font-family:var(--mono); font-size:11px; color:var(--muted); line-height:1.85; }
+  .step-desc code { color:var(--text); background:var(--surface2); border-radius:3px; padding:1px 5px; font-size:10px; }
+  .step-hr { border:none; border-top:.5px solid var(--border); margin:1.25rem 0 1.25rem 40px; }
 
-  /* Primary (latest) row */
-  .hprimary { display: flex; align-items: flex-start; gap: 12px; cursor: pointer; }
-  .hprimary:hover .hq { text-decoration: underline; text-decoration-color: var(--faint); }
+  footer { margin-top:2rem; text-align:center; font-family:var(--mono); font-size:10px; color:var(--faint); line-height:1.8; }
 
-  .hist-ans { font-family: var(--serif); font-size: 22px; font-weight: 900; min-width: 42px; margin-top: 1px; flex-shrink: 0; }
-  .hist-ans.yes { color: var(--yes); }
-  .hist-ans.no  { color: var(--no); }
-  .hq   { font-size: 13px; color: var(--text); line-height: 1.4; }
-  .hmeta { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px; line-height: 1.8; }
-
-  /* Row actions: delete + expand */
-  .hactions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; margin-left: auto; opacity: 0; transition: opacity .15s; }
-  .hprimary:hover .hactions { opacity: 1; }
-  .btn-del { background: none; border: .5px solid var(--no-dim); border-radius: 4px; font-family: var(--mono); font-size: 10px; color: var(--no); padding: 2px 7px; cursor: pointer; transition: background .1s; white-space: nowrap; }
-  .btn-del:hover { background: var(--no-bg); }
-  .btn-expand { background: none; border: .5px solid var(--border2); border-radius: 4px; font-family: var(--mono); font-size: 10px; color: var(--muted); padding: 2px 7px; cursor: pointer; transition: background .1s; white-space: nowrap; }
-  .btn-expand:hover { background: var(--surface2); color: var(--text); }
-
-  /* Expandable details (verify data) */
-  .hdetail { display: none; margin-top: 10px; margin-left: 54px; }
-  .hgroup.open .hdetail { display: block; }
-
-  /* Previous attempts */
-  .hprev-list { display: none; margin-top: 8px; margin-left: 54px; border-left: 1px solid var(--border); padding-left: 12px; }
-  .hgroup.prev-open .hprev-list { display: block; }
-  .hprev-item { display: flex; align-items: flex-start; gap: 8px; padding: 7px 0; border-bottom: .5px solid var(--border); }
-  .hprev-item:last-child { border-bottom: none; }
-  .hprev-ans { font-family: var(--serif); font-size: 15px; font-weight: 900; min-width: 30px; flex-shrink: 0; }
-  .hprev-ans.yes { color: var(--yes); }
-  .hprev-ans.no  { color: var(--no); }
-  .hprev-meta { font-family: var(--mono); font-size: 10px; color: var(--muted); line-height: 1.8; flex: 1; min-width: 0; }
-  .hprev-actions { opacity: 0; transition: opacity .12s; flex-shrink: 0; }
-  .hprev-item:hover .hprev-actions { opacity: 1; }
-
-  /* ── Footer ── */
-  footer { margin-top: 3rem; text-align: center; font-family: var(--mono); font-size: 10px; color: var(--faint); line-height: 1.8; }
-
-  /* ── Animations ── */
-  .fade-in { animation: fadeUp .35s ease forwards; }
+  .fade-in { animation:fadeUp .35s ease forwards; }
   @keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
 
-  /* ── Tooltip for copy ── */
   .toast {
-    position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
-    background: var(--surface); border: .5px solid var(--yes-dim); color: var(--yes);
-    font-family: var(--mono); font-size: 12px; padding: 8px 18px; border-radius: 20px;
-    pointer-events: none; opacity: 0; transition: opacity .2s;
-    white-space: nowrap; z-index: 999;
+    position:fixed; bottom:2rem; left:50%; transform:translateX(-50%);
+    background:var(--surface); border:.5px solid var(--yes-dim); color:var(--yes);
+    font-family:var(--mono); font-size:12px; padding:8px 18px; border-radius:20px;
+    pointer-events:none; opacity:0; transition:opacity .2s; white-space:nowrap; z-index:999;
   }
-  .toast.show { opacity: 1; }
+  .toast.show { opacity:1; }
 
-  @media (max-width: 520px) {
-    .answer-main { font-size: 72px; }
-    .info-grid { grid-template-columns: 1fr; }
+  @media (max-width:520px) {
+    .answer-main { font-size:72px; }
+    .info-grid { grid-template-columns:1fr; }
   }
 </style>
 </head>
 <body>
 
-<div class="toast" id="toast">Kopieret!</div>
+<div class="toast" id="toast">Copied!</div>
 
 <header>
   <div>
-    <div class="site-title">Oraklet</div>
-    <div class="tagline">svarer ja eller nej — og intet derimellem</div>
+    <div class="site-title">The Oracle</div>
+    <div class="tagline">answers yes or no — and nothing in between</div>
   </div>
-  <div class="counter-wrap">
-    <div class="counter-label">spørgsmål #</div>
+  <div>
+    <div class="counter-label">question #</div>
     <div class="counter-val" id="cnt">0</div>
   </div>
 </header>
 
-<!-- Main oracle card -->
 <div class="card">
-  <div class="section-title" style="margin-bottom:8px;">dit spørgsmål</div>
-  <input type="text" id="qin" placeholder="Hvad skal oraklet svare på?" maxlength="200"/>
-
+  <div class="section-title" style="margin-bottom:8px;">your question</div>
+  <input type="text" id="qin" placeholder="What should the oracle answer?" maxlength="200"/>
+  <div class="mode-row">
+    <span class="mode-label">mode</span>
+    <select id="mode-select" onchange="onModeChange()">
+      <option value="yesno">Yes / No</option>
+      <option value="8ball">Magic 8-Ball (20 answers)</option>
+    </select>
+  </div>
   <div class="answer-wrap">
-    <div class="answer-main neutral" id="ans">?</div>
+    <div class="answer-main neutral size-xl" id="ans">?</div>
+    <div class="answer-cat" id="anscat"></div>
     <div class="answer-q" id="ansq"></div>
   </div>
-
-  <button class="btn" id="abtn" onclick="ask()">Spørg oraklet</button>
+  <button class="btn" id="abtn" onclick="ask()">Ask</button>
   <div class="status" id="status"></div>
 </div>
 
-<!-- Block info -->
 <div class="card fade-in" id="bpanel" style="display:none;">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
     <div class="section-title" style="margin-bottom:0;">block info</div>
     <span id="srcbadge" class="src-badge"></span>
   </div>
-
-  <div class="info-grid" id="info-grid">
-    <!-- filled by JS -->
-  </div>
+  <div class="info-grid" id="info-grid"></div>
 
   <div class="field-row">
-    <div class="field-key">
-      block hash (entropikilde)
-      <button class="copy-btn" onclick="copyField('bi-bh', this)">⎘ kopier</button>
-    </div>
-    <div class="field-val truncated" id="bi-bh" onclick="toggleExpand(this)" title="Klik for at udvide">—</div>
-    <div class="expand-hint">klik for at udvide · klik igen for at skjule</div>
+    <div class="field-key">block hash (entropy source) <button class="copy-btn" onclick="copyField('bi-bh',this)">⎘ copy</button></div>
+    <div class="field-val truncated" id="bi-bh" onclick="toggleExpand(this)">—</div>
+    <div class="expand-hint">click to expand · click again to collapse</div>
   </div>
-
   <div class="field-row">
-    <div class="field-key">
-      merkle root
-      <button class="copy-btn" onclick="copyField('bi-mr', this)">⎘ kopier</button>
-    </div>
-    <div class="field-val truncated" id="bi-mr" onclick="toggleExpand(this)" title="Klik for at udvide">—</div>
+    <div class="field-key">merkle root <button class="copy-btn" onclick="copyField('bi-mr',this)">⎘ copy</button></div>
+    <div class="field-val truncated" id="bi-mr" onclick="toggleExpand(this)">—</div>
   </div>
 
   <hr class="div"/>
-
-  <!-- Merkle Tree Visualisation -->
-  <button class="tog-btn" id="mtog" onclick="toggleSection('merkle-section', 'mtog', 'merkle træ')">▶ vis merkle træ</button>
+  <button class="tog-btn" id="mtog" onclick="toggleSection('merkle-section','mtog','merkle tree')">▶ show merkle tree</button>
   <div id="merkle-section" style="display:none;">
     <div id="merkle-svg-wrap"></div>
     <div class="bit-row" id="bi-b" style="margin-top:12px;"></div>
@@ -299,29 +256,84 @@
   </div>
 
   <hr class="div"/>
-
-  <!-- Verification export -->
-  <button class="tog-btn" id="vtog" onclick="toggleSection('verify-section', 'vtog', 'verificeringsdata')">▶ vis verificeringsdata</button>
+  <button class="tog-btn" id="vtog" onclick="toggleSection('verify-section','vtog','verification data')">▶ show verification data</button>
   <div id="verify-section" style="display:none;">
     <div style="display:flex;justify-content:flex-end;margin-bottom:6px;">
-      <button class="copy-btn" onclick="copyField('verify-block', this)">⎘ kopier alt</button>
+      <button class="copy-btn" onclick="copyField('verify-block',this)">⎘ copy all</button>
     </div>
     <div class="verify-block" id="verify-block"></div>
   </div>
 </div>
 
-<!-- History -->
 <div class="card fade-in" id="hpanel" style="display:none;">
   <div class="history-header">
-    <div class="section-title" style="margin-bottom:0;">historik</div>
-    <button class="btn-clear" onclick="clearH()">Ryd alt</button>
+    <div class="section-title" style="margin-bottom:0;">history</div>
+    <button class="btn-clear" onclick="clearH()">Clear all</button>
   </div>
   <div id="hlist"></div>
 </div>
 
+<!-- How it works -->
+<div class="card how-card">
+  <div class="how-title">how it works</div>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-head">Fetch a live block from the Cardano blockchain</div>
+      <div class="step-desc">When you ask a question, the app contacts the Cardano mainnet and retrieves the most recently confirmed block. This block contains a <code>hash</code>, <code>slot</code>, <code>height</code>, <code>timestamp</code>, <code>epoch</code>, and <code>epoch slot</code> — all values determined by thousands of independent validators around the world. No single person controls or can predict these numbers.</div>
+    </div>
+  </div>
+  <hr class="step-hr"/>
+
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-head">Add a question counter as a seventh input</div>
+      <div class="step-desc">A counter tracking how many times you have asked is added as an extra input. This means every question produces a unique result — even if the underlying blockchain block has not changed yet. Asking twice within the same block gives two completely different answers.</div>
+    </div>
+  </div>
+  <hr class="step-hr"/>
+
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-head">Hash each value with SHA-256 to form the tree leaves</div>
+      <div class="step-desc">Each of the seven values is individually hashed using <code>SHA-256</code>, producing seven 64-character hexadecimal strings. These are the <em>leaves</em> of the Merkle tree. SHA-256 is a one-way cryptographic function — the same input always gives the same output, but the output cannot be reversed to find the input. Even a tiny change in input produces a completely different hash.</div>
+    </div>
+  </div>
+  <hr class="step-hr"/>
+
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <div class="step-head">Build a Merkle tree up to a single root</div>
+      <div class="step-desc">Adjacent leaf hashes are concatenated and hashed together. The results are paired again and hashed, repeating until only one hash remains — the <code>Merkle root</code>. This is the exact same structure used inside Bitcoin and Cardano to verify the integrity of every transaction. Changing even one character anywhere in the input completely changes the root.</div>
+    </div>
+  </div>
+  <hr class="step-hr"/>
+
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-body">
+      <div class="step-head">Count the 1-bits in the root → YES or NO</div>
+      <div class="step-desc">The 64 hex characters of the Merkle root are converted to 256 binary bits. The total number of <code>1</code>-bits is counted. If the count is <code>even</code>, the answer is <strong>YES</strong>. If <code>odd</code>, the answer is <strong>NO</strong>. Because the root is derived from live blockchain data, neither outcome can be known or manipulated before the block is produced.</div>
+    </div>
+  </div>
+  <hr class="step-hr"/>
+
+  <div class="step">
+    <div class="step-num">6</div>
+    <div class="step-body">
+      <div class="step-head">Every result is independently verifiable</div>
+      <div class="step-desc">All data used is shown: the block hash, every intermediate hash, the full Merkle root, and the bit count. Anyone can look up the block on a public Cardano explorer, repeat the SHA-256 computations themselves, rebuild the tree, and confirm the answer. The result is not a random number — it is a <em>deterministic outcome</em> from public, tamper-proof data.</div>
+    </div>
+  </div>
+</div>
+
 <footer>
-  Cardano blockchain · Merkle tree · SHA-256<br/>
-  Datakilde: Blockfrost → Koios → Lokal CSPRNG
+  The Oracle · Cardano blockchain · Merkle tree · SHA-256<br/>
+  Data source: Blockfrost → Koios → Local CSPRNG
 </footer>
 
 <script>
@@ -329,9 +341,8 @@ const BF_KEY = 'mainnet3m4a2IJRiU1lOAnQl7A0mokVocBGLVEB';
 let n = 0, cached = null, cacheT = 0;
 const openSections = {};
 
-/* ── Utility ── */
 function st(m) { document.getElementById('status').textContent = m; }
-function sh(h) { return h ? h.slice(0, 12) + '…' + h.slice(-8) : '—'; }
+function sh(h) { return h ? h.slice(0,12)+'…'+h.slice(-8) : '—'; }
 
 function showToast(msg) {
   const t = document.getElementById('toast');
@@ -340,404 +351,411 @@ function showToast(msg) {
 }
 
 function copyField(id, btn) {
-  const el = document.getElementById(id);
-  if (!el) return;
+  const el = document.getElementById(id); if (!el) return;
   const text = el.dataset.full || el.textContent;
   navigator.clipboard.writeText(text).then(() => {
-    showToast('Kopieret!');
-    if (btn) { btn.classList.add('copied'); btn.textContent = '✓ kopieret'; setTimeout(() => { btn.classList.remove('copied'); btn.textContent = '⎘ kopier'; }, 1500); }
+    showToast('Copied!');
+    if (btn) { btn.classList.add('copied'); btn.textContent = '✓ copied'; setTimeout(() => { btn.classList.remove('copied'); btn.textContent = '⎘ copy'; }, 1500); }
   });
 }
 
 function copyText(text, btn) {
   navigator.clipboard.writeText(text).then(() => {
-    showToast('Kopieret!');
+    showToast('Copied!');
     if (btn) { btn.classList.add('copied'); btn.textContent = '✓'; setTimeout(() => { btn.classList.remove('copied'); btn.textContent = '⎘'; }, 1500); }
   });
 }
 
-function toggleExpand(el) {
-  if (el.classList.contains('truncated')) {
-    el.classList.remove('truncated'); el.classList.add('expanded');
-  } else {
-    el.classList.remove('expanded'); el.classList.add('truncated');
-  }
-}
+function toggleExpand(el) { el.classList.toggle('truncated'); el.classList.toggle('expanded'); }
 
 function toggleSection(id, btnId, label) {
   openSections[id] = !openSections[id];
   document.getElementById(id).style.display = openSections[id] ? 'block' : 'none';
-  document.getElementById(btnId).textContent = (openSections[id] ? '▼ skjul ' : '▶ vis ') + label;
+  document.getElementById(btnId).textContent = (openSections[id] ? '▼ hide ' : '▶ show ') + label;
 }
 
-/* ── Crypto ── */
 async function sha256(s) {
   const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
-  return Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2, '0')).join('');
+  return Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2,'0')).join('');
 }
 
 async function buildMerkle(leaves) {
   let nodes = await Promise.all(leaves.map(sha256));
   const lh = [...nodes];
-  const levels = [nodes.map((h, i) => ({ h, label: leaves[i], isLeaf: true, idx: i }))];
+  const levels = [nodes.map((h,i) => ({ h, isLeaf:true, idx:i }))];
   let cur = [...nodes];
   while (cur.length > 1) {
     const nx = [], lvl = [];
     for (let i = 0; i < cur.length; i += 2) {
-      const r = i + 1 < cur.length ? cur[i + 1] : cur[i];
-      const combined = await sha256(cur[i] + r);
-      nx.push(combined);
-      lvl.push({ h: combined, label: sh(combined), isLeaf: false });
+      const r = i+1 < cur.length ? cur[i+1] : cur[i];
+      const combined = await sha256(cur[i]+r);
+      nx.push(combined); lvl.push({ h:combined, isLeaf:false });
     }
     cur = nx; levels.push(lvl);
   }
-  return { root: cur[0], lh, levels };
+  return { root:cur[0], lh, levels };
 }
 
 function rootToBool(root) {
   let o = 0;
-  for (const c of root) { const v = parseInt(c, 16); o += (v & 1) + ((v >> 1) & 1) + ((v >> 2) & 1) + ((v >> 3) & 1); }
-  return { r: o % 2 === 0, o };
+  for (const c of root) { const v=parseInt(c,16); o+=(v&1)+((v>>1)&1)+((v>>2)&1)+((v>>3)&1); }
+  return { r:o%2===0, o };
 }
 
-/* ── Merkle SVG ── */
 function renderMerkleSVG(levels, leafLabels, lh) {
-  const BOX_W = 130, BOX_H = 40, GAP_X = 16, GAP_Y = 52;
-  const depth = levels.length;
-  const maxNodes = levels[0].length;
-  const svgW = Math.max(500, maxNodes * (BOX_W + GAP_X));
-  const svgH = depth * (BOX_H + GAP_Y) + 20;
+  const BOX_W=130, BOX_H=40, GAP_X=16, GAP_Y=52;
+  const depth=levels.length, maxNodes=levels[0].length;
+  const svgW=Math.max(500, maxNodes*(BOX_W+GAP_X));
+  const svgH=depth*(BOX_H+GAP_Y)+20;
+  const YES='#1d9e75', YES_DIM='#0f5c44', YES_BG='rgba(29,158,117,.13)';
+  const SURFACE2='#1c1c1a', BORDER='#333330', TEXT='#e4e2dc', MUTED='#6b6b65';
 
-  const YES = '#1d9e75', YES_DIM = '#0f5c44', YES_BG = 'rgba(29,158,117,.13)';
-  const SURFACE2 = '#1c1c1a', BORDER = '#333330', TEXT = '#e4e2dc', MUTED = '#6b6b65';
-
-  // positions[level][i] = cx
-  const pos = levels.map((lvl, li) => {
-    const total = lvl.length * BOX_W + (lvl.length - 1) * GAP_X;
-    const startX = (svgW - total) / 2;
-    return lvl.map((_, i) => startX + i * (BOX_W + GAP_X) + BOX_W / 2);
+  const pos = levels.map((lvl,li) => {
+    const total = lvl.length*BOX_W+(lvl.length-1)*GAP_X;
+    const startX = (svgW-total)/2;
+    return lvl.map((_,i) => startX+i*(BOX_W+GAP_X)+BOX_W/2);
   });
 
-  let lines = '', nodes = '';
-
-  // Draw lines bottom-up (leaves at index 0, root at top = depth-1)
-  for (let li = 0; li < depth - 1; li++) {
-    const parentLevel = li + 1;
-    for (let pi = 0; pi < levels[parentLevel].length; pi++) {
-      const c1 = pi * 2;
-      const c2 = Math.min(pi * 2 + 1, levels[li].length - 1);
-      const py = (depth - 1 - parentLevel) * (BOX_H + GAP_Y) + BOX_H / 2 + 10;
-      const cy = (depth - 1 - li) * (BOX_H + GAP_Y) + BOX_H / 2 + 10;
-      const px = pos[parentLevel][pi];
-      for (const ci of [c1, c2]) {
-        if (ci !== c2 || c1 !== c2) {
-          const cx = pos[li][ci];
-          lines += `<line x1="${cx}" y1="${cy}" x2="${px}" y2="${py}" stroke="${BORDER}" stroke-width="1"/>`;
-        }
+  let lines='', nodes='';
+  for (let li=0; li<depth-1; li++) {
+    const pl=li+1;
+    for (let pi=0; pi<levels[pl].length; pi++) {
+      const c1=pi*2, c2=Math.min(pi*2+1, levels[li].length-1);
+      const py=(depth-1-pl)*(BOX_H+GAP_Y)+BOX_H/2+10;
+      const cy=(depth-1-li)*(BOX_H+GAP_Y)+BOX_H/2+10;
+      const px=pos[pl][pi];
+      for (const ci of [c1,c2]) {
+        if (ci!==c2||c1!==c2) lines+=`<line x1="${pos[li][ci]}" y1="${cy}" x2="${px}" y2="${py}" stroke="${BORDER}" stroke-width="1"/>`;
       }
     }
   }
-
-  // Draw nodes — leaves (li=0) at bottom, root (li=depth-1) at top
-  for (let li = 0; li < depth; li++) {
-    const y = (depth - 1 - li) * (BOX_H + GAP_Y) + 10;
-    levels[li].forEach((node, i) => {
-      const cx = pos[li][i];
-      const isCounter = li === 0 && i === levels[0].length - 1;
-      const isRoot = li === depth - 1;
-      const fill = isRoot ? YES_BG : isCounter ? 'rgba(29,158,117,.08)' : SURFACE2;
-      const stroke = isRoot ? YES : isCounter ? YES_DIM : BORDER;
-      const label = li === 0 ? leafLabels[i] + (isCounter ? '(' + n + ')' : '') : '';
-      const hashShort = sh(node.h);
-      const titleText = li === 0 ? lh[i] : node.h;
-
-      nodes += `<g class="merkle-node" onclick="showNodeDetail('${node.h}', '${li === 0 ? (leafLabels[i] + (isCounter ? '(' + n + ')' : '')) : (isRoot ? 'Merkle root' : 'Intern node')}')">
-        <title>${titleText}</title>
-        <rect x="${cx - BOX_W / 2}" y="${y}" width="${BOX_W}" height="${BOX_H}" rx="5"
-          fill="${fill}" stroke="${stroke}" stroke-width="${isRoot ? 1 : 0.5}"/>
-        ${label ? `<text x="${cx}" y="${y + 13}" text-anchor="middle" font-family="'DM Mono',monospace" font-size="9" fill="${isCounter ? YES : MUTED}">${label}</text>` : ''}
-        <text x="${cx}" y="${y + (label ? 28 : 24)}" text-anchor="middle" font-family="'DM Mono',monospace" font-size="${isRoot ? 9 : 9}" fill="${isRoot ? YES : TEXT}">${hashShort}</text>
-        ${isRoot ? `<text x="${cx}" y="${y + 13}" text-anchor="middle" font-family="'Syne',sans-serif" font-size="9" fill="${YES}" letter-spacing="0.08em">MERKLE ROOT</text>` : ''}
+  for (let li=0; li<depth; li++) {
+    const y=(depth-1-li)*(BOX_H+GAP_Y)+10;
+    levels[li].forEach((node,i) => {
+      const cx=pos[li][i];
+      const isCounter=li===0&&i===levels[0].length-1;
+      const isRoot=li===depth-1;
+      const fill=isRoot?YES_BG:isCounter?'rgba(29,158,117,.08)':SURFACE2;
+      const stroke=isRoot?YES:isCounter?YES_DIM:BORDER;
+      const label=li===0 ? leafLabels[i]+(isCounter?'('+n+')':'') : '';
+      nodes+=`<g class="merkle-node" onclick="showNodeCopy('${node.h}')">
+        <title>${li===0?lh[i]:node.h}</title>
+        <rect x="${cx-BOX_W/2}" y="${y}" width="${BOX_W}" height="${BOX_H}" rx="5" fill="${fill}" stroke="${stroke}" stroke-width="${isRoot?1:.5}"/>
+        ${label?`<text x="${cx}" y="${y+13}" text-anchor="middle" font-family="'DM Mono',monospace" font-size="9" fill="${isCounter?YES:MUTED}">${label}</text>`:''}
+        ${isRoot?`<text x="${cx}" y="${y+13}" text-anchor="middle" font-family="'Syne',sans-serif" font-size="9" fill="${YES}" letter-spacing="0.08em">MERKLE ROOT</text>`:''}
+        <text x="${cx}" y="${y+(label||isRoot?28:24)}" text-anchor="middle" font-family="'DM Mono',monospace" font-size="9" fill="${isRoot?YES:TEXT}">${sh(node.h)}</text>
       </g>`;
     });
   }
-
-  return `<svg width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <style>.merkle-node:hover rect { opacity: 0.75; }</style>
-    </defs>
-    ${lines}${nodes}
-  </svg>`;
+  return `<svg width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}" xmlns="http://www.w3.org/2000/svg">${lines}${nodes}</svg>`;
 }
 
-function showNodeDetail(hash, label) {
-  // Show in verify block area, or just copy
-  navigator.clipboard.writeText(hash).then(() => showToast('Hash kopieret: ' + hash.slice(0,8) + '…'));
+function showNodeCopy(hash) {
+  navigator.clipboard.writeText(hash).then(() => showToast('Hash copied: '+hash.slice(0,8)+'…'));
 }
 
-/* ── Fetch ── */
 async function tryBlockfrost() {
-  const res = await fetch('https://cardano-mainnet.blockfrost.io/api/v0/blocks/latest', { headers: { project_id: BF_KEY } });
-  if (!res.ok) throw new Error('BF ' + res.status);
+  const res = await fetch('https://cardano-mainnet.blockfrost.io/api/v0/blocks/latest', { headers:{ project_id:BF_KEY } });
+  if (!res.ok) throw new Error('BF '+res.status);
   const d = await res.json();
-  return { hash: d.hash, slot: d.slot, height: d.height, time: d.time, epoch: d.epoch, epoch_slot: d.epoch_slot, _src: 'Blockfrost', _cls: 'src-bf' };
+  return { hash:d.hash, slot:d.slot, height:d.height, time:d.time, epoch:d.epoch, epoch_slot:d.epoch_slot, _src:'Blockfrost', _cls:'src-bf' };
 }
 
 async function tryKoios() {
-  const res = await fetch('https://api.koios.rest/api/v1/tip', { headers: { Accept: 'application/json' } });
-  if (!res.ok) throw new Error('Koios ' + res.status);
-  const d = await res.json(); const t = Array.isArray(d) ? d[0] : d;
-  return { hash: t.hash, slot: t.abs_slot, height: t.block_no, time: Math.floor(new Date(t.block_time).getTime() / 1000), epoch: t.epoch_no, epoch_slot: t.epoch_slot, _src: 'Koios', _cls: 'src-koios' };
+  const res = await fetch('https://api.koios.rest/api/v1/tip', { headers:{ Accept:'application/json' } });
+  if (!res.ok) throw new Error('Koios '+res.status);
+  const d = await res.json(); const t = Array.isArray(d)?d[0]:d;
+  return { hash:t.hash, slot:t.abs_slot, height:t.block_no, time:Math.floor(new Date(t.block_time).getTime()/1000), epoch:t.epoch_no, epoch_slot:t.epoch_slot, _src:'Koios', _cls:'src-koios' };
 }
 
 function localFallback() {
-  const bytes = new Uint8Array(32); crypto.getRandomValues(bytes);
-  const hash = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
-  return { hash, slot: Date.now(), height: 0, time: Math.floor(Date.now() / 1000), epoch: 0, epoch_slot: Math.floor(performance.now()), _src: 'Lokal CSPRNG', _cls: 'src-local' };
+  const bytes=new Uint8Array(32); crypto.getRandomValues(bytes);
+  const hash=Array.from(bytes).map(b=>b.toString(16).padStart(2,'0')).join('');
+  return { hash, slot:Date.now(), height:0, time:Math.floor(Date.now()/1000), epoch:0, epoch_slot:Math.floor(performance.now()), _src:'Local CSPRNG', _cls:'src-local' };
 }
 
 async function getBlock() {
-  const now = Date.now();
-  if (cached && (now - cacheT) < 18000) { st('cachet block — tæller ændrer træet'); return cached; }
-  for (const [label, fn] of [['Blockfrost', tryBlockfrost], ['Koios', tryKoios]]) {
-    try { st('henter fra ' + label + '…'); cached = await fn(); cacheT = Date.now(); return cached; }
-    catch { st(label + ' fejlede, prøver næste…'); }
+  const now=Date.now();
+  if (cached&&(now-cacheT)<18000) { st('using cached block — counter changes the tree'); return cached; }
+  for (const [label,fn] of [['Blockfrost',tryBlockfrost],['Koios',tryKoios]]) {
+    try { st('fetching from '+label+'…'); cached=await fn(); cacheT=Date.now(); return cached; }
+    catch { st(label+' failed, trying next…'); }
   }
-  st('bruger lokal CSPRNG'); cached = localFallback(); cacheT = Date.now(); return cached;
+  st('using local CSPRNG'); cached=localFallback(); cacheT=Date.now(); return cached;
 }
 
-/* ── Render info field ── */
-function makeField(key, value, canCopy = false, full = null) {
-  const id = 'f-' + key.replace(/[^a-z0-9]/g, '-');
-  const display = full ? sh(full) : value;
+function makeField(key, value, full=null) {
+  const display=full?sh(full):value;
   return `<div class="info-item">
-    <div class="field-key">${key}${canCopy ? `<button class="copy-btn" onclick="copyText('${full || value}', this)">⎘</button>` : ''}</div>
-    <div class="field-val${full ? ' truncated' : ''}" id="${id}"${full ? ` onclick="toggleExpand(this)" data-full="${full}"` : ''}>${display}</div>
+    <div class="field-key">${key}${full?`<button class="copy-btn" onclick="copyText('${full}',this)">⎘</button>`:''}</div>
+    <div class="field-val${full?' truncated':''}"${full?` onclick="toggleExpand(this)" data-full="${full}"`:''}>${display}</div>
   </div>`;
 }
 
-/* ── History ── */
-function loadH() { try { return JSON.parse(localStorage.getItem('oracle_h') || '[]'); } catch { return []; } }
-function saveH(e) { try { localStorage.setItem('oracle_h', JSON.stringify(e)); } catch {} }
-
-function normQ(q) { return (q || '').trim().toLowerCase(); }
-
 function buildVerifyText(e) {
+  const isYesNo = !e.modeName || e.modeName === 'Yes / No';
+  const method = isYesNo
+    ? 'Count 1-bits in Merkle root → EVEN = YES, ODD = NO'
+    : 'BigInt("0x" + merkleRoot) % 20 → index into 20-answer table';
   return [
-    'ORAKEL VERIFICERINGSDATA',
-    '========================',
-    'Spørgsmål : ' + (e.question || '—'),
-    'Svar      : ' + e.answer,
-    'Tidspunkt : ' + e.dt,
-    'Spørgsmål#: ' + e.n,
-    'Datakilde : ' + e.src,
+    'VERIFICATION DATA',
+    '=================',
+    'Question   : '+(e.question||'—'),
+    'Answer     : '+e.answer,
+    'Mode       : '+(e.modeName||'Yes / No'),
+    'Timestamp  : '+e.dt,
+    'Question # : '+e.n,
+    'Data source: '+e.src,
     '',
-    'Block højde: ' + (e.height || '—'),
-    'Epoch      : ' + (e.epoch || '—'),
-    'Block hash : ' + (e.hash || '—'),
+    'Block height: '+(e.height||'—'),
+    'Epoch       : '+(e.epoch||'—'),
+    'Block hash  : '+(e.hash||'—'),
     '',
-    'Merkle root: ' + (e.root || '—'),
+    'Merkle root : '+(e.root||'—'),
     '',
-    'Metode: SHA-256 blade af [hash, slot, height, time, epoch, epoch_slot, tæller(' + e.n + ')]',
-    '        Merkle root beregnes. Antal 1-bits i root → LIGE=JA, ULIGE=NEJ.',
+    'Leaves: SHA-256([hash, slot, height, time, epoch, epoch_slot, counter('+e.n+')])',
+    'Method: '+method,
   ].join('\n');
 }
 
-function deleteGroup(key) {
-  const hist = loadH().filter(e => normQ(e.question) !== key);
-  saveH(hist); renderH(hist);
-}
+function loadH() { try { return JSON.parse(localStorage.getItem('oracle_h')||'[]'); } catch { return []; } }
+function saveH(e) { try { localStorage.setItem('oracle_h', JSON.stringify(e)); } catch {} }
+function normQ(q) { return (q||'').trim().toLowerCase(); }
 
-function deleteEntry(entryN) {
-  const hist = loadH().filter(e => e.n !== entryN);
-  saveH(hist); renderH(hist);
-}
+function deleteGroup(key) { saveH(loadH().filter(e=>normQ(e.question)!==key)); renderH(loadH()); }
+function deleteEntry(entryN) { saveH(loadH().filter(e=>e.n!==entryN)); renderH(loadH()); }
 
 function toggleGroup(gid, mode) {
-  // mode: 'detail' or 'prev'
-  const el = document.getElementById(gid);
-  if (!el) return;
-  const cls = mode === 'prev' ? 'prev-open' : 'open';
+  const el=document.getElementById(gid); if (!el) return;
+  const cls=mode==='prev'?'prev-open':'open';
   el.classList.toggle(cls);
-  // update button label
-  const btnId = gid + '-' + mode + 'btn';
-  const btn = document.getElementById(btnId);
-  if (!btn) return;
-  if (mode === 'prev') {
-    const count = parseInt(btn.dataset.count || 0);
-    btn.textContent = el.classList.contains('prev-open') ? '▼ skjul tidligere' : `▶ ${count} tidligere forsøg`;
+  const btn=document.getElementById(gid+'-'+mode+'btn'); if (!btn) return;
+  if (mode==='prev') {
+    const count=btn.dataset.count||0;
+    btn.textContent=el.classList.contains('prev-open')?'▼ hide previous':`▶ ${count} previous attempt${count>1?'s':''}`;
   } else {
-    btn.textContent = el.classList.contains('open') ? '▲ skjul detaljer' : '▼ vis detaljer';
+    btn.textContent=el.classList.contains('open')?'▲ hide details':'▼ show details';
   }
 }
 
 function renderH(entries) {
-  const p = document.getElementById('hpanel'), l = document.getElementById('hlist');
-  if (!entries.length) { p.style.display = 'none'; return; }
-  p.style.display = 'block';
+  const p=document.getElementById('hpanel'), l=document.getElementById('hlist');
+  if (!entries.length) { p.style.display='none'; return; }
+  p.style.display='block';
 
-  // Group by normalized question, preserving insertion order of first occurrence
-  const groupMap = new Map();
+  const groupMap=new Map();
   for (const e of entries) {
-    const k = normQ(e.question);
-    if (!groupMap.has(k)) groupMap.set(k, []);
+    const k=normQ(e.question);
+    if (!groupMap.has(k)) groupMap.set(k,[]);
     groupMap.get(k).push(e);
   }
+  const groups=[...groupMap.entries()].map(([k,items]) => {
+    items.sort((a,b)=>b.n-a.n);
+    return { k, latest:items[0], prev:items.slice(1) };
+  }).sort((a,b)=>b.latest.n-a.latest.n);
 
-  // Sort groups by latest entry timestamp descending
-  const groups = [...groupMap.entries()].map(([k, items]) => {
-    items.sort((a, b) => b.n - a.n); // latest first
-    return { k, latest: items[0], prev: items.slice(1) };
-  }).sort((a, b) => b.latest.n - a.latest.n);
+  l.innerHTML=groups.map((g,gi) => {
+    const gid='hg-'+gi, e=g.latest;
+    const ansCls = e.tone || (e.answer==='YES'?'yes':e.answer==='NO'?'no':'maybe');
+    const vtext=buildVerifyText(e).replace(/`/g,"'");
+    const qDisplay=e.question
+      ?`<span class="hq">${e.question}</span>`
+      :`<em style="color:var(--muted);font-size:12px;">no question entered</em>`;
 
-  l.innerHTML = groups.map((g, gi) => {
-    const gid = 'hg-' + gi;
-    const e = g.latest;
-    const ansCls = e.answer === 'JA' ? 'yes' : 'no';
-    const vtext = buildVerifyText(e).replace(/`/g, "'");
-    const qDisplay = e.question
-      ? `<span class="hq">${e.question}</span>`
-      : `<em style="color:var(--muted);font-size:12px;">intet spørgsmål</em>`;
-
-    const prevHtml = g.prev.length ? g.prev.map(pe => {
-      const pAnsCls = pe.answer === 'JA' ? 'yes' : 'no';
-      const pvtext = buildVerifyText(pe).replace(/`/g, "'");
+    const prevHtml=g.prev.map(pe=>{
+      const pAnsCls=pe.tone||(pe.answer==='YES'?'yes':pe.answer==='NO'?'no':'maybe');
+      const pvtext=buildVerifyText(pe).replace(/`/g,"'");
       return `<div class="hprev-item">
         <div class="hprev-ans ${pAnsCls}">${pe.answer}</div>
-        <div class="hprev-meta">${pe.dt} · spørgsmål #${pe.n} · ${pe.src}<br/>${sh(pe.hash)}</div>
+        <div class="hprev-meta">${pe.dt} · question #${pe.n} · ${pe.src}<br/>${sh(pe.hash)}</div>
         <div class="hprev-actions">
           <button class="copy-btn" onclick="event.stopPropagation();copyText(\`${pvtext}\`,this)" style="margin-right:4px;">⎘</button>
-          <button class="btn-del" onclick="event.stopPropagation();deleteEntry(${pe.n})">slet</button>
+          <button class="btn-del" onclick="event.stopPropagation();deleteEntry(${pe.n})">delete</button>
         </div>
       </div>`;
-    }).join('') : '';
+    }).join('');
 
-    const prevToggle = g.prev.length
-      ? `<button class="btn-expand" id="${gid}-prevbtn" data-count="${g.prev.length}"
-           onclick="event.stopPropagation();toggleGroup('${gid}','prev')">▶ ${g.prev.length} tidligere forsøg</button>`
-      : '';
+    const prevToggle=g.prev.length
+      ?`<button class="btn-expand" id="${gid}-prevbtn" data-count="${g.prev.length}"
+          onclick="event.stopPropagation();toggleGroup('${gid}','prev')">▶ ${g.prev.length} previous attempt${g.prev.length>1?'s':''}</button>`
+      :'';
 
     return `<div class="hgroup" id="${gid}">
       <div class="hprimary" onclick="toggleGroup('${gid}','detail')">
         <div class="hist-ans ${ansCls}">${e.answer}</div>
         <div style="flex:1;min-width:0;">
           ${qDisplay}
-          <div class="hmeta">${e.dt} · spørgsmål #${e.n} · ${e.src}<br/>${sh(e.hash)}</div>
+          <div class="hmeta">${e.dt} · question #${e.n} · ${e.src}${e.modeName?' · '+e.modeName:''}<br/>${sh(e.hash)}</div>
           <div style="display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap;">
             <button class="btn-expand" id="${gid}-detailbtn"
-              onclick="event.stopPropagation();toggleGroup('${gid}','detail')">▼ vis detaljer</button>
+              onclick="event.stopPropagation();toggleGroup('${gid}','detail')">▼ show details</button>
             ${prevToggle}
           </div>
         </div>
         <div class="hactions" onclick="event.stopPropagation();">
-          <button class="btn-del" onclick="deleteGroup('${g.k.replace(/'/g, "\\'")}')">slet</button>
+          <button class="btn-del" onclick="deleteGroup('${g.k.replace(/'/g,"\\'")}')">delete</button>
         </div>
       </div>
       <div class="hdetail">
         <div style="display:flex;justify-content:flex-end;margin-bottom:6px;">
-          <button class="copy-btn" onclick="copyText(\`${vtext}\`,this)">⎘ kopier verificeringsdata</button>
+          <button class="copy-btn" onclick="copyText(\`${vtext}\`,this)">⎘ copy verification data</button>
         </div>
         <div class="verify-block">${buildVerifyText(e)}</div>
       </div>
-      ${g.prev.length ? `<div class="hprev-list">${prevHtml}</div>` : ''}
+      ${g.prev.length?`<div class="hprev-list">${prevHtml}</div>`:''}
     </div>`;
   }).join('');
 }
 
 function clearH() { saveH([]); renderH([]); }
 
-/* ── Main ask ── */
-async function ask() {
-  const btn = document.getElementById('abtn');
+/* ── Answer modes ── */
+const MODES = {
+  yesno: {
+    name: 'Yes / No',
+    pick(root) {
+      // Count 1-bits in all 256 bits; even = YES, odd = NO
+      let ones = 0;
+      for (const c of root) { const v=parseInt(c,16); ones+=(v&1)+((v>>1)&1)+((v>>2)&1)+((v>>3)&1); }
+      const yes = ones % 2 === 0;
+      return { text: yes ? 'YES' : 'NO', tone: yes ? 'yes' : 'no', cat: '', ones, method: `1-bit count in Merkle root: ${ones} (${yes?'even':'odd'}) → ${yes?'YES':'NO'}` };
+    }
+  },
+  '8ball': {
+    name: 'Magic 8-Ball',
+    answers: [
+      { text:'It is certain',         tone:'yes',   cat:'positive' },
+      { text:'It is decidedly so',    tone:'yes',   cat:'positive' },
+      { text:'Without a doubt',       tone:'yes',   cat:'positive' },
+      { text:'Yes, definitely',       tone:'yes',   cat:'positive' },
+      { text:'You may rely on it',    tone:'yes',   cat:'positive' },
+      { text:'As I see it, yes',      tone:'yes',   cat:'positive' },
+      { text:'Most likely',           tone:'yes',   cat:'positive' },
+      { text:'Outlook good',          tone:'yes',   cat:'positive' },
+      { text:'Yes',                   tone:'yes',   cat:'positive' },
+      { text:'Signs point to yes',    tone:'yes',   cat:'positive' },
+      { text:'Reply hazy, try again', tone:'maybe', cat:'non-committal' },
+      { text:'Ask again later',       tone:'maybe', cat:'non-committal' },
+      { text:'Better not tell you now',tone:'maybe',cat:'non-committal' },
+      { text:'Cannot predict now',    tone:'maybe', cat:'non-committal' },
+      { text:'Concentrate and ask again',tone:'maybe',cat:'non-committal' },
+      { text:'Don\'t count on it',   tone:'no',    cat:'negative' },
+      { text:'My reply is no',        tone:'no',    cat:'negative' },
+      { text:'My sources say no',     tone:'no',    cat:'negative' },
+      { text:'Outlook not so good',   tone:'no',    cat:'negative' },
+      { text:'Very doubtful',         tone:'no',    cat:'negative' },
+    ],
+    pick(root) {
+      // Convert full 256-bit Merkle root to BigInt, mod 20 → index
+      // Bias: (2^256 mod 20) / 2^256 ≈ 10^-75 — negligibly uniform
+      const idx = Number(BigInt('0x' + root) % 20n);
+      const a = this.answers[idx];
+      return { text: a.text, tone: a.tone, cat: a.cat, idx, method: `BigInt("0x" + merkleRoot) % 20 = ${idx} → "${a.text}"` };
+    }
+  }
+};
+
+function getMode() { return document.getElementById('mode-select').value; }
+
+function onModeChange() {
   const ansEl = document.getElementById('ans');
-  const ansQ = document.getElementById('ansq');
-  const q = document.getElementById('qin').value.trim();
-
-  btn.disabled = true;
+  const catEl = document.getElementById('anscat');
+  if (ansEl.textContent === '?' || ansEl.innerHTML.includes('spinner')) return;
+  ansEl.textContent = '?';
+  ansEl.className = 'answer-main neutral size-xl';
+  catEl.textContent = '';
+  catEl.className = 'answer-cat';
+  document.getElementById('ansq').textContent = '';
   document.getElementById('bpanel').style.display = 'none';
-  ansEl.className = 'answer-main neutral';
-  ansEl.innerHTML = '<div class="spinner"></div>';
-  ansQ.textContent = q;
-
-  try {
-    const blk = await getBlock();
-    n++; document.getElementById('cnt').textContent = n;
-    st('bygger merkle tree…');
-
-    const leafLabels = ['hash', 'slot', 'height', 'time', 'epoch', 'epoch_slot', 'tæller'];
-    const leaves = [blk.hash, String(blk.slot), String(blk.height), String(blk.time), String(blk.epoch), String(blk.epoch_slot), String(n)];
-    const { root, lh, levels } = await buildMerkle(leaves);
-    const { r, o } = rootToBool(root);
-    const answer = r ? 'JA' : 'NEJ';
-    const dt = new Date(blk.time * 1000).toLocaleString('da-DK');
-
-    st('');
-    ansEl.className = 'answer-main fade-in ' + (r ? 'yes' : 'no');
-    ansEl.textContent = answer;
-    if (q) ansQ.textContent = '"' + q + '"';
-
-    // Source badge
-    const sb = document.getElementById('srcbadge');
-    sb.textContent = blk._src; sb.className = 'src-badge ' + blk._cls;
-
-    // Info grid
-    document.getElementById('info-grid').innerHTML = [
-      makeField('dato & tid', dt),
-      makeField('block højde', blk.height ? blk.height.toLocaleString('da-DK') : '—'),
-      makeField('epoch', blk.epoch || '—'),
-      makeField('slot i epoch', blk.epoch_slot ? blk.epoch_slot.toLocaleString('da-DK') : '—'),
-      makeField('absolut slot', blk.slot ? blk.slot.toLocaleString('da-DK') : '—'),
-      makeField('tæller-blad', '#' + n),
-    ].join('');
-
-    // Hash fields
-    const bhEl = document.getElementById('bi-bh');
-    bhEl.textContent = sh(blk.hash); bhEl.dataset.full = blk.hash;
-    bhEl.className = 'field-val truncated';
-
-    const mrEl = document.getElementById('bi-mr');
-    mrEl.textContent = sh(root); mrEl.dataset.full = root;
-    mrEl.className = 'field-val truncated';
-
-    // Merkle SVG
-    document.getElementById('merkle-svg-wrap').innerHTML = renderMerkleSVG(levels, leafLabels, lh);
-
-    // Bit row
-    let t1 = 0, t0 = 0;
-    document.getElementById('bi-b').innerHTML = root.split('').map(c => {
-      const v = parseInt(c, 16); let h = '';
-      for (let b = 3; b >= 0; b--) { const bit = (v >> b) & 1; if (bit) t1++; else t0++; h += `<div class="bit ${bit ? 'b1' : 'b0'}"></div>`; }
-      return h;
-    }).join('');
-    document.getElementById('bi-bi').textContent = `1'ere: ${t1} · 0'ere: ${t0} · ${t1} er ${t1 % 2 === 0 ? 'LIGE → JA' : 'ULIGE → NEJ'}`;
-
-    // Verify block
-    const entry = { question: q, answer, height: blk.height, epoch: blk.epoch, hash: blk.hash, dt, n, src: blk._src, root };
-    document.getElementById('verify-block').textContent = buildVerifyText(entry);
-
-    const bp = document.getElementById('bpanel');
-    bp.style.display = 'block'; bp.className = 'card fade-in';
-
-    // Save history
-    const hist = loadH();
-    hist.push(entry);
-    saveH(hist); renderH(hist);
-
-  } catch (e) {
-    ansEl.className = 'answer-main no';
-    ansEl.textContent = '!';
-    st('fejl: ' + e.message);
-  } finally { btn.disabled = false; }
 }
 
-document.getElementById('qin').addEventListener('keydown', e => { if (e.key === 'Enter') ask(); });
+function sizeClass(text) {
+  const l = text.length;
+  if (l <= 3)  return 'size-xl';
+  if (l <= 12) return 'size-lg';
+  if (l <= 22) return 'size-md';
+  return 'size-sm';
+}
 
-// Init
-(function () {
-  const hist = loadH();
-  if (hist.length) {
-    n = Math.max(...hist.map(e => e.n || 0));
-    document.getElementById('cnt').textContent = n;
+
+async function ask() {
+  const btn=document.getElementById('abtn');
+  const ansEl=document.getElementById('ans');
+  const catEl=document.getElementById('anscat');
+  const ansQ=document.getElementById('ansq');
+  const q=document.getElementById('qin').value.trim();
+  const mode=MODES[getMode()];
+  btn.disabled=true;
+  document.getElementById('bpanel').style.display='none';
+  ansEl.className='answer-main neutral size-xl';
+  ansEl.innerHTML='<div class="spinner"></div>';
+  catEl.textContent=''; catEl.className='answer-cat';
+  ansQ.textContent=q;
+
+  try {
+    const blk=await getBlock();
+    n++; document.getElementById('cnt').textContent=n;
+    st('building merkle tree…');
+
+    const leafLabels=['hash','slot','height','time','epoch','epoch_slot','counter'];
+    const leaves=[blk.hash,String(blk.slot),String(blk.height),String(blk.time),String(blk.epoch),String(blk.epoch_slot),String(n)];
+    const { root, lh, levels }=await buildMerkle(leaves);
+    const pick=mode.pick(root);
+    const dt=new Date(blk.time*1000).toLocaleString('en-GB');
+
+    st('');
+    ansEl.className=`answer-main fade-in ${pick.tone} ${sizeClass(pick.text)}`;
+    ansEl.textContent=pick.text;
+    if (pick.cat) { catEl.textContent=pick.cat; catEl.className='answer-cat '+pick.tone; }
+    if (q) ansQ.textContent='"'+q+'"';
+
+    const sb=document.getElementById('srcbadge');
+    sb.textContent=blk._src; sb.className='src-badge '+blk._cls;
+
+    document.getElementById('info-grid').innerHTML=[
+      makeField('date & time', dt),
+      makeField('block height', blk.height?blk.height.toLocaleString('en-GB'):'—'),
+      makeField('epoch', blk.epoch||'—'),
+      makeField('slot in epoch', blk.epoch_slot?blk.epoch_slot.toLocaleString('en-GB'):'—'),
+      makeField('absolute slot', blk.slot?blk.slot.toLocaleString('en-GB'):'—'),
+      makeField('counter leaf', '#'+n),
+    ].join('');
+
+    const bhEl=document.getElementById('bi-bh');
+    bhEl.textContent=sh(blk.hash); bhEl.dataset.full=blk.hash; bhEl.className='field-val truncated';
+    const mrEl=document.getElementById('bi-mr');
+    mrEl.textContent=sh(root); mrEl.dataset.full=root; mrEl.className='field-val truncated';
+
+    document.getElementById('merkle-svg-wrap').innerHTML=renderMerkleSVG(levels,leafLabels,lh);
+
+    let t1=0,t0=0;
+    document.getElementById('bi-b').innerHTML=root.split('').map(c=>{
+      const v=parseInt(c,16); let h='';
+      for(let b=3;b>=0;b--){const bit=(v>>b)&1;if(bit)t1++;else t0++;h+=`<div class="bit ${bit?'b1':'b0'}"></div>`;}
+      return h;
+    }).join('');
+    document.getElementById('bi-bi').textContent=`ones: ${t1} · zeros: ${t0} · ${pick.method}`;
+
+    const entry={ question:q, answer:pick.text, tone:pick.tone, cat:pick.cat||'', height:blk.height, epoch:blk.epoch, hash:blk.hash, dt, n, src:blk._src, root, modeName:mode.name };
+    document.getElementById('verify-block').textContent=buildVerifyText(entry);
+
+    const bp=document.getElementById('bpanel');
+    bp.style.display='block'; bp.className='card fade-in';
+
+    const hist=loadH(); hist.push(entry); saveH(hist); renderH(hist);
+
+  } catch(e) {
+    ansEl.className='answer-main no size-xl'; ansEl.textContent='!'; st('error: '+e.message);
+  } finally { btn.disabled=false; }
+}
+
+document.getElementById('qin').addEventListener('keydown', e=>{ if(e.key==='Enter') ask(); });
+
+(function(){
+  const hist=loadH();
+  if(hist.length){
+    n=Math.max(...hist.map(e=>e.n||0));
+    document.getElementById('cnt').textContent=n;
     renderH(hist);
   }
 })();
