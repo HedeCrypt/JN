@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>The Oracle</title>
+<title>Geeky8</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Syne:wght@400;600;700;800&family=Playfair+Display:ital,wght@0,900;1,900&display=swap" rel="stylesheet"/>
 <style>
@@ -73,7 +73,41 @@
   .answer-cat.no    { color:var(--no-dim); }
   .answer-cat.maybe { color:var(--amber-dim); }
 
-  .btn {
+  /* Hardcore toggle */
+  .hardcore-row { display:flex; gap:10px; align-items:center; margin-bottom:1rem; }
+  .hardcore-label { font-family:var(--mono); font-size:10px; color:var(--muted); letter-spacing:.1em; text-transform:uppercase; flex:1; }
+  .toggle-wrap { position:relative; width:36px; height:20px; flex-shrink:0; }
+  .toggle-wrap input { opacity:0; width:0; height:0; position:absolute; }
+  .toggle-track {
+    position:absolute; inset:0; border-radius:20px; cursor:pointer;
+    background:var(--surface2); border:.5px solid var(--border2);
+    transition:background .2s, border-color .2s;
+  }
+  .toggle-wrap input:checked + .toggle-track { background:var(--no-dim); border-color:var(--no); }
+  .toggle-track::after {
+    content:''; position:absolute; width:14px; height:14px; border-radius:50%;
+    background:var(--muted); top:2px; left:2px; transition:transform .2s, background .2s;
+  }
+  .toggle-wrap input:checked + .toggle-track::after { transform:translateX(16px); background:var(--no); }
+  .hardcore-badge {
+    font-family:var(--mono); font-size:10px; padding:1px 7px; border-radius:4px;
+    border:.5px solid var(--no-dim); color:var(--no); display:none; white-space:nowrap;
+  }
+  .hardcore-badge.visible { display:inline-block; }
+
+  /* Protest overlay */
+  .protest-wrap { text-align:center; padding:1.5rem 0.5rem; }
+  .protest-icon { font-size:42px; margin-bottom:12px; }
+  .protest-msg {
+    font-family:var(--serif); font-size:22px; font-weight:900; color:var(--no);
+    line-height:1.3; margin-bottom:10px;
+  }
+  .protest-sub { font-family:var(--mono); font-size:11px; color:var(--muted); line-height:1.7; }
+  .protest-override {
+    margin-top:16px; font-family:var(--mono); font-size:10px; color:var(--faint);
+    cursor:pointer; border:none; background:none; padding:4px; transition:color .15s; display:block; width:100%;
+  }
+  .protest-override:hover { color:var(--muted); }
     width:100%; font-family:var(--sans); font-size:13px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
     background:transparent; border:1px solid var(--border2); border-radius:8px;
     color:var(--text); padding:14px; cursor:pointer; transition:background .15s, border-color .15s, transform .08s;
@@ -202,8 +236,8 @@
 
 <header>
   <div>
-    <div class="site-title">The Oracle</div>
-    <div class="tagline">answers yes or no — and nothing in between</div>
+    <div class="site-title">Geeky8</div>
+    <div class="tagline">blockchain-verified answers · impossibly random · fully auditable</div>
   </div>
   <div>
     <div class="counter-label">question #</div>
@@ -212,8 +246,6 @@
 </header>
 
 <div class="card">
-  <div class="section-title" style="margin-bottom:8px;">your question</div>
-  <input type="text" id="qin" placeholder="What should the oracle answer?" maxlength="200"/>
   <div class="mode-row">
     <span class="mode-label">mode</span>
     <select id="mode-select" onchange="onModeChange()">
@@ -221,6 +253,16 @@
       <option value="8ball">Magic 8-Ball (20 answers)</option>
     </select>
   </div>
+  <div class="hardcore-row">
+    <span class="hardcore-label">hardcore mode</span>
+    <span class="hardcore-badge" id="hc-badge">ACTIVE</span>
+    <label class="toggle-wrap">
+      <input type="checkbox" id="hc-toggle" onchange="onHardcoreChange()"/>
+      <span class="toggle-track"></span>
+    </label>
+  </div>
+  <div class="section-title" style="margin-bottom:8px;">your question</div>
+  <input type="text" id="qin" placeholder="What should the oracle answer?" maxlength="200"/>
   <div class="answer-wrap">
     <div class="answer-main neutral size-xl" id="ans">?</div>
     <div class="answer-cat" id="anscat"></div>
@@ -332,8 +374,7 @@
 </div>
 
 <footer>
-  The Oracle · Cardano blockchain · Merkle tree · SHA-256<br/>
-  Data source: Blockfrost → Koios → Local CSPRNG
+  Cardano blockchain · Merkle tree · SHA-256
 </footer>
 
 <script>
@@ -557,19 +598,21 @@ function renderH(entries) {
   l.innerHTML=groups.map((g,gi) => {
     const gid='hg-'+gi, e=g.latest;
     const ansCls = e.tone || (e.answer==='YES'?'yes':e.answer==='NO'?'no':'maybe');
-    const vtext=buildVerifyText(e).replace(/`/g,"'");
+    const vtext = buildVerifyText(e);
+    verifyTexts.set(gid, vtext);
     const qDisplay=e.question
-      ?`<span class="hq">${e.question}</span>`
+      ?`<span class="hq">${escHTML(e.question)}</span>`
       :`<em style="color:var(--muted);font-size:12px;">no question entered</em>`;
 
-    const prevHtml=g.prev.map(pe=>{
+    const prevHtml=g.prev.map((pe,pi)=>{
       const pAnsCls=pe.tone||(pe.answer==='YES'?'yes':pe.answer==='NO'?'no':'maybe');
-      const pvtext=buildVerifyText(pe).replace(/`/g,"'");
+      const prevKey = gid+'-p'+pi;
+      verifyTexts.set(prevKey, buildVerifyText(pe));
       return `<div class="hprev-item">
         <div class="hprev-ans ${pAnsCls}">${pe.answer}</div>
         <div class="hprev-meta">${pe.dt} · question #${pe.n} · ${pe.src}<br/>${sh(pe.hash)}</div>
         <div class="hprev-actions">
-          <button class="copy-btn" onclick="event.stopPropagation();copyText(\`${pvtext}\`,this)" style="margin-right:4px;">⎘</button>
+          <button class="copy-btn" onclick="event.stopPropagation();copyVerify('${prevKey}',this)" style="margin-right:4px;">⎘</button>
           <button class="btn-del" onclick="event.stopPropagation();deleteEntry(${pe.n})">delete</button>
         </div>
       </div>`;
@@ -598,16 +641,24 @@ function renderH(entries) {
       </div>
       <div class="hdetail">
         <div style="display:flex;justify-content:flex-end;margin-bottom:6px;">
-          <button class="copy-btn" onclick="copyText(\`${vtext}\`,this)">⎘ copy verification data</button>
+          <button class="copy-btn" onclick="copyVerify('${gid}',this)">⎘ copy verification data</button>
         </div>
-        <div class="verify-block">${buildVerifyText(e)}</div>
+        <div class="verify-block">${escHTML(buildVerifyText(e))}</div>
       </div>
       ${g.prev.length?`<div class="hprev-list">${prevHtml}</div>`:''}
     </div>`;
   }).join('');
 }
 
-function clearH() { saveH([]); renderH([]); }
+function escHTML(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Store verify texts by group ID — avoids escaping issues in onclick attributes
+const verifyTexts = new Map();
+function copyVerify(id, btn) { copyText(verifyTexts.get(id) || '', btn); }
+
+
 
 /* ── Answer modes ── */
 const MODES = {
@@ -678,6 +729,63 @@ function sizeClass(text) {
 }
 
 
+/* ── Hardcore mode ── */
+const PROTESTS = [
+  { msg: "The blockchain already answered this.", sub: "The universe doesn't do reruns." },
+  { msg: "SHA-256 is not a negotiation tool.", sub: "The chain has spoken. Immutably." },
+  { msg: "You asked. The chain answered.", sub: "Your feelings are not a valid input." },
+  { msg: "The entropy has been spent.", sub: "This answer is as permanent as the block it came from." },
+  { msg: "First answer stands.", sub: "That's not a rule — that's just physics." },
+  { msg: "The Merkle tree does not do re-runs.", sub: "Block #{h} already settled this." },
+  { msg: "Still you?", sub: "The answer hasn't changed. Neither has the blockchain." },
+  { msg: "One question. One answer.", sub: "You already have yours." },
+  { msg: "I answered this with cryptographic certainty.", sub: "What part of 'immutable' needs clarification?" },
+  { msg: "Asking again won't rewrite the hash.", sub: "Trust the tree." },
+];
+
+function isHardcore() { return document.getElementById('hc-toggle').checked; }
+
+function onHardcoreChange() {
+  document.getElementById('hc-badge').classList.toggle('visible', isHardcore());
+}
+
+function alreadyAnswered(q) {
+  if (!q) return null;
+  const hist = loadH();
+  const key = normQ(q);
+  return hist.find(e => normQ(e.question) === key) || null;
+}
+
+function showProtest(q, prev) {
+  const ansEl = document.getElementById('ans');
+  const catEl = document.getElementById('anscat');
+  const ansQ  = document.getElementById('ansq');
+
+  const p = PROTESTS[Math.floor(Math.random() * PROTESTS.length)];
+  const sub = p.sub.replace('#{h}', prev.height || '?');
+
+  ansEl.className = 'answer-main no size-sm fade-in';
+  ansEl.innerHTML = `<div class="protest-wrap">
+    <div class="protest-msg">${p.msg}</div>
+    <div class="protest-sub">${sub}<br/><br/>
+      Previous answer: <strong style="color:var(--no)">${escHTML(prev.answer)}</strong>
+      &nbsp;·&nbsp; question #${prev.n}
+    </div>
+    <button class="protest-override" onclick="askAnyway()">
+      (I understand — ask anyway and record as a new attempt)
+    </button>
+  </div>`;
+  catEl.textContent = 'hardcore mode';
+  catEl.className = 'answer-cat no';
+  ansQ.textContent = q ? '"' + q + '"' : '';
+}
+
+function askAnyway() {
+  document.getElementById('hc-toggle').checked = false;
+  onHardcoreChange();
+  ask();
+}
+
 async function ask() {
   const btn=document.getElementById('abtn');
   const ansEl=document.getElementById('ans');
@@ -685,6 +793,13 @@ async function ask() {
   const ansQ=document.getElementById('ansq');
   const q=document.getElementById('qin').value.trim();
   const mode=MODES[getMode()];
+
+  // Hardcore mode: intercept if question was already answered
+  if (isHardcore() && q) {
+    const prev = alreadyAnswered(q);
+    if (prev) { showProtest(q, prev); return; }
+  }
+
   btn.disabled=true;
   document.getElementById('bpanel').style.display='none';
   ansEl.className='answer-main neutral size-xl';
