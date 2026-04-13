@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Oraklet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Syne:wght@400;600;700;800&family=Playfair+Display:ital,wght@0,900;1,900&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #0c0c0b;
+    --surface: #141413;
+    --surface2:#1c1c1a;
+    --border:  #272724;
+    --border2: #333330;
+    --text:    #e4e2dc;
+    --muted:   #6b6b65;
+    --faint:   #3a3a36;
+    --yes:     #1d9e75;
+    --yes-dim: #0f5c44;
+    --no:      #d85a30;
+    --no-dim:  #7a3019;
+    --amber:   #ba7517;
+    --mono:    'DM Mono', monospace;
+    --serif:   'Playfair Display', serif;
+    --sans:    'Syne', sans-serif;
+  }
+
+  html { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; }
+  body { max-width: 680px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+  /* ── Header ── */
+  header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2.5rem; }
+  .site-title { font-size: 13px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+  .counter-wrap { text-align: right; }
+  .counter-label { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .counter-val { font-family: var(--mono); font-size: 13px; color: var(--yes); border: .5px solid var(--yes-dim); border-radius: 4px; padding: 2px 8px; display: inline-block; }
+
+  /* ── Card ── */
+  .card { background: var(--surface); border: .5px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+
+  /* ── Input ── */
+  .field-label { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  input[type=text] {
+    width: 100%; font-family: var(--sans); font-size: 15px; padding: 13px 16px;
+    background: var(--surface2); border: .5px solid var(--border2); border-radius: 8px;
+    color: var(--text); outline: none; transition: border-color .15s;
+  }
+  input[type=text]:focus { border-color: var(--faint); }
+  input[type=text]::placeholder { color: var(--muted); }
+
+  /* ── Answer ── */
+  .answer-wrap { text-align: center; padding: 2rem 0 1.75rem; }
+  .answer-main {
+    font-family: var(--serif); font-size: 96px; font-weight: 900; line-height: 1;
+    letter-spacing: -.02em; transition: color .2s;
+    min-height: 100px; display: flex; align-items: center; justify-content: center;
+  }
+  .answer-main.neutral { color: var(--faint); }
+  .answer-main.yes { color: var(--yes); }
+  .answer-main.no  { color: var(--no); }
+  .answer-main.loading { color: var(--faint); }
+  .answer-q { font-size: 13px; color: var(--muted); margin-top: 10px; min-height: 20px; font-style: italic; }
+
+  /* ── Button ── */
+  .btn {
+    width: 100%; font-family: var(--sans); font-size: 13px; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase;
+    background: transparent; border: 1px solid var(--border2); border-radius: 8px;
+    color: var(--text); padding: 14px; cursor: pointer;
+    transition: background .15s, border-color .15s, transform .1s;
+  }
+  .btn:hover { background: var(--surface2); border-color: var(--faint); }
+  .btn:active { transform: scale(.98); }
+  .btn:disabled { opacity: .3; cursor: not-allowed; transform: none; }
+
+  /* ── Status ── */
+  .status { font-family: var(--mono); font-size: 11px; color: var(--muted); text-align: center; margin-top: 10px; min-height: 16px; }
+
+  /* ── Spinner ── */
+  .spinner {
+    display: inline-block; width: 48px; height: 48px;
+    border: 2px solid var(--faint); border-top-color: var(--muted);
+    border-radius: 50%; animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Block info ── */
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 24px; margin-bottom: 14px; }
+  .info-key { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-bottom: 3px; }
+  .info-val { font-family: var(--mono); font-size: 12px; color: var(--text); }
+  .hash-val { font-family: var(--mono); font-size: 10px; color: var(--muted); word-break: break-all; line-height: 1.7; }
+  .src-badge {
+    font-family: var(--mono); font-size: 10px; padding: 2px 8px;
+    border-radius: 4px; border: .5px solid; display: inline-block;
+  }
+  .src-bf    { border-color: var(--yes-dim); color: var(--yes); }
+  .src-koios { border-color: var(--yes-dim); color: var(--yes); }
+  .src-ai    { border-color: var(--amber); color: var(--amber); }
+  .src-local { border-color: var(--amber); color: var(--amber); }
+
+  /* ── Merkle ── */
+  .tog-btn { background: none; border: none; cursor: pointer; font-family: var(--mono); font-size: 11px; color: var(--muted); padding: 8px 0; text-align: left; transition: color .15s; }
+  .tog-btn:hover { color: var(--text); }
+  .leaves-wrap { display: flex; gap: 4px; flex-wrap: wrap; margin: 8px 0 14px; }
+  .leaf-node {
+    font-family: var(--mono); font-size: 10px; background: var(--surface2);
+    border: .5px solid var(--border2); border-radius: 3px; padding: 2px 7px;
+    color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;
+  }
+  .leaf-counter { border-color: var(--yes-dim); color: var(--yes); }
+  .bit-row { display: flex; gap: 2px; flex-wrap: wrap; margin-top: 6px; }
+  .bit { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+  .b1 { background: var(--yes); }
+  .b0 { background: var(--surface2); border: .5px solid var(--border2); }
+  .bit-info { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 6px; }
+
+  /* ── History ── */
+  .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .section-title { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .btn-clear { background: none; border: .5px solid var(--no-dim); border-radius: 6px; font-family: var(--mono); font-size: 11px; color: var(--no); padding: 5px 12px; cursor: pointer; transition: background .15s; }
+  .btn-clear:hover { background: rgba(216,90,48,.08); }
+  .hist-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: .5px solid var(--border); }
+  .hist-item:last-child { border-bottom: none; }
+  .hist-ans { font-family: var(--serif); font-size: 22px; font-weight: 900; min-width: 42px; margin-top: 1px; }
+  .hist-ans.yes { color: var(--yes); }
+  .hist-ans.no  { color: var(--no); }
+  .hist-q   { font-size: 13px; color: var(--text); line-height: 1.4; }
+  .hist-meta{ font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 4px; line-height: 1.7; }
+
+  /* ── Footer ── */
+  footer { margin-top: 3rem; text-align: center; font-family: var(--mono); font-size: 10px; color: var(--faint); line-height: 1.8; }
+
+  /* ── Animations ── */
+  .fade-in { animation: fadeUp .35s ease forwards; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+  /* ── Divider ── */
+  .divider { border: none; border-top: .5px solid var(--border); margin: .5rem 0; }
+
+  @media (max-width: 480px) {
+    .answer-main { font-size: 72px; }
+    .info-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="site-title">Oraklet</div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:4px;font-style:italic;">svarer ja eller nej — og intet derimellem</div>
+  </div>
+  <div class="counter-wrap">
+    <div class="counter-label">spørgsmål #</div>
+    <div class="counter-val" id="cnt">0</div>
+  </div>
+</header>
+
+<!-- Main oracle card -->
+<div class="card">
+  <div class="field-label">dit spørgsmål</div>
+  <input type="text" id="qin" placeholder="Hvad skal oraklet svare på?" maxlength="200"/>
+
+  <div class="answer-wrap">
+    <div class="answer-main neutral" id="ans">?</div>
+    <div class="answer-q" id="ansq"></div>
+  </div>
+
+  <button class="btn" id="abtn" onclick="ask()">Spørg oraklet</button>
+  <div class="status" id="status"></div>
+</div>
+
+<!-- Block info -->
+<div class="card fade-in" id="bpanel" style="display:none;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+    <div class="section-title">block info</div>
+    <span id="srcbadge" class="src-badge"></span>
+  </div>
+  <div class="info-grid">
+    <div><div class="info-key">dato &amp; tid</div><div class="info-val" id="bi-t">—</div></div>
+    <div><div class="info-key">block højde</div><div class="info-val" id="bi-h">—</div></div>
+    <div><div class="info-key">epoch</div><div class="info-val" id="bi-e">—</div></div>
+    <div><div class="info-key">slot i epoch</div><div class="info-val" id="bi-es">—</div></div>
+    <div><div class="info-key">absolut slot</div><div class="info-val" id="bi-s">—</div></div>
+    <div><div class="info-key">tæller-blad</div><div class="info-val" style="color:var(--yes);" id="bi-c">—</div></div>
+  </div>
+  <div style="margin-bottom:10px;">
+    <div class="info-key" style="margin-bottom:4px;">block hash (entropikilde)</div>
+    <div class="hash-val" id="bi-bh">—</div>
+  </div>
+  <div>
+    <div class="info-key" style="margin-bottom:4px;">merkle root</div>
+    <div class="hash-val" id="bi-mr">—</div>
+  </div>
+  <hr class="divider" style="margin-top:12px;"/>
+  <button class="tog-btn" id="mtog" onclick="toggleM()">▶ vis merkle detaljer</button>
+  <div id="md" style="display:none;">
+    <div class="info-key" style="margin-bottom:6px;">blade · sha-256 &nbsp;<span style="color:var(--yes);">grøn = tæller-blad</span></div>
+    <div class="leaves-wrap" id="bi-l"></div>
+    <div class="info-key" style="margin-bottom:4px;">bit-fordeling i merkle root &nbsp;<span style="color:var(--yes);">▪ = 1</span></div>
+    <div class="bit-row" id="bi-b"></div>
+    <div class="bit-info" id="bi-bi"></div>
+  </div>
+</div>
+
+<!-- History -->
+<div class="card fade-in" id="hpanel" style="display:none;">
+  <div class="history-header">
+    <div class="section-title">historik</div>
+    <button class="btn-clear" onclick="clearH()">Ryd alt</button>
+  </div>
+  <div id="hlist"></div>
+</div>
+
+<footer>
+  Cardano blockchain · Merkle tree · SHA-256<br/>
+  Datakilde: Blockfrost → Koios → Lokal CSPRNG
+</footer>
+
+<script>
+const BF_KEY = 'mainnet3m4a2IJRiU1lOAnQl7A0mokVocBGLVEB';
+let n = 0, cached = null, cacheT = 0, mOpen = false;
+
+/* ── Crypto ── */
+async function sha256(s) {
+  const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2, '0')).join('');
+}
+
+async function buildMerkle(leaves) {
+  let nodes = await Promise.all(leaves.map(sha256));
+  const lh = [...nodes];
+  while (nodes.length > 1) {
+    const nx = [];
+    for (let i = 0; i < nodes.length; i += 2)
+      nx.push(await sha256(nodes[i] + (i + 1 < nodes.length ? nodes[i + 1] : nodes[i])));
+    nodes = nx;
+  }
+  return { root: nodes[0], lh };
+}
+
+function rootToBool(root) {
+  let o = 0;
+  for (const c of root) { const v = parseInt(c, 16); o += (v & 1) + ((v >> 1) & 1) + ((v >> 2) & 1) + ((v >> 3) & 1); }
+  return { r: o % 2 === 0, o };
+}
+
+/* ── Fetch strategies ── */
+async function tryBlockfrost() {
+  const res = await fetch('https://cardano-mainnet.blockfrost.io/api/v0/blocks/latest', {
+    headers: { project_id: BF_KEY }
+  });
+  if (!res.ok) throw new Error('BF ' + res.status);
+  const d = await res.json();
+  return { hash: d.hash, slot: d.slot, height: d.height, time: d.time, epoch: d.epoch, epoch_slot: d.epoch_slot, _src: 'Blockfrost', _cls: 'src-bf' };
+}
+
+async function tryKoios() {
+  const res = await fetch('https://api.koios.rest/api/v1/tip', { headers: { Accept: 'application/json' } });
+  if (!res.ok) throw new Error('Koios ' + res.status);
+  const d = await res.json();
+  const t = Array.isArray(d) ? d[0] : d;
+  return {
+    hash: t.hash, slot: t.abs_slot, height: t.block_no,
+    time: Math.floor(new Date(t.block_time).getTime() / 1000),
+    epoch: t.epoch_no, epoch_slot: t.epoch_slot,
+    _src: 'Koios', _cls: 'src-koios'
+  };
+}
+
+function localFallback() {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  const hash = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+  return {
+    hash, slot: Date.now(), height: 0,
+    time: Math.floor(Date.now() / 1000),
+    epoch: 0, epoch_slot: Math.floor(performance.now()),
+    _src: 'Lokal CSPRNG', _cls: 'src-local'
+  };
+}
+
+async function getBlock() {
+  const now = Date.now();
+  if (cached && (now - cacheT) < 18000) { st('cachet block — tæller ændrer træet'); return cached; }
+  const sources = [['Blockfrost', tryBlockfrost], ['Koios', tryKoios]];
+  for (const [label, fn] of sources) {
+    try { st('henter fra ' + label + '…'); cached = await fn(); cacheT = Date.now(); return cached; }
+    catch (e) { st(label + ' fejlede, prøver næste…'); }
+  }
+  st('bruger lokal CSPRNG');
+  cached = localFallback(); cacheT = Date.now(); return cached;
+}
+
+/* ── UI helpers ── */
+function st(m) { document.getElementById('status').textContent = m; }
+function sh(h) { return h ? h.slice(0, 8) + '…' + h.slice(-6) : ''; }
+function toggleM() {
+  mOpen = !mOpen;
+  document.getElementById('md').style.display = mOpen ? 'block' : 'none';
+  document.getElementById('mtog').textContent = (mOpen ? '▼' : '▶') + ' vis merkle detaljer';
+}
+
+/* ── History ── */
+function loadH() { try { return JSON.parse(localStorage.getItem('oracle_history') || '[]'); } catch { return []; } }
+function saveH(e) { try { localStorage.setItem('oracle_history', JSON.stringify(e)); } catch {} }
+
+function renderH(entries) {
+  const p = document.getElementById('hpanel'), l = document.getElementById('hlist');
+  if (!entries.length) { p.style.display = 'none'; return; }
+  p.style.display = 'block';
+  l.innerHTML = entries.slice().reverse().map(e => `
+    <div class="hist-item">
+      <div class="hist-ans ${e.answer === 'JA' ? 'yes' : 'no'}">${e.answer}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="hist-q">${e.question || '<em style="color:var(--muted)">intet spørgsmål</em>'}</div>
+        <div class="hist-meta">
+          ${e.dt}<br/>
+          Spørgsmål #${e.n} · ${e.src}<br/>
+          Blok ${e.height || '–'} · Epoch ${e.epoch || '–'}<br/>
+          ${sh(e.hash)}
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+async function clearH() { saveH([]); renderH([]); }
+
+/* ── Main ask ── */
+async function ask() {
+  const btn = document.getElementById('abtn');
+  const ansEl = document.getElementById('ans');
+  const ansQ = document.getElementById('ansq');
+  const q = document.getElementById('qin').value.trim();
+
+  btn.disabled = true;
+  document.getElementById('bpanel').style.display = 'none';
+  ansEl.className = 'answer-main loading';
+  ansEl.innerHTML = '<div class="spinner"></div>';
+  ansQ.textContent = q;
+
+  try {
+    const blk = await getBlock();
+    n++;
+    document.getElementById('cnt').textContent = n;
+    st('bygger merkle tree…');
+
+    const labels = ['hash', 'slot', 'height', 'time', 'epoch', 'epoch_slot', 'tæller'];
+    const leaves = [blk.hash, String(blk.slot), String(blk.height), String(blk.time), String(blk.epoch), String(blk.epoch_slot), String(n)];
+    const { root, lh } = await buildMerkle(leaves);
+    const { r, o } = rootToBool(root);
+    const answer = r ? 'JA' : 'NEJ';
+    const dt = new Date(blk.time * 1000).toLocaleString('da-DK');
+
+    st('');
+    ansEl.className = 'answer-main fade-in ' + (r ? 'yes' : 'no');
+    ansEl.textContent = answer;
+    if (q) ansQ.textContent = '"' + q + '"';
+
+    // Block info panel
+    const sb = document.getElementById('srcbadge');
+    sb.textContent = blk._src; sb.className = 'src-badge ' + blk._cls;
+    document.getElementById('bi-t').textContent  = dt;
+    document.getElementById('bi-h').textContent  = blk.height ? blk.height.toLocaleString('da-DK') : '—';
+    document.getElementById('bi-e').textContent  = blk.epoch || '—';
+    document.getElementById('bi-es').textContent = blk.epoch_slot ? blk.epoch_slot.toLocaleString('da-DK') : '—';
+    document.getElementById('bi-s').textContent  = blk.slot ? blk.slot.toLocaleString('da-DK') : '—';
+    document.getElementById('bi-c').textContent  = '#' + n;
+    document.getElementById('bi-bh').textContent = blk.hash;
+    document.getElementById('bi-mr').textContent = root;
+
+    // Merkle leaves
+    document.getElementById('bi-l').innerHTML = lh.map((h, i) => {
+      const isC = i === lh.length - 1;
+      return `<span class="leaf-node${isC ? ' leaf-counter' : ''}" title="${h}">${labels[i]}${isC ? '(' + n + ')' : ''}: ${sh(h)}</span>`;
+    }).join('<span style="font-size:9px;color:var(--faint);padding:0 2px;">→</span>');
+
+    // Bit display
+    let t1 = 0, t0 = 0;
+    document.getElementById('bi-b').innerHTML = root.split('').map(c => {
+      const v = parseInt(c, 16); let h = '';
+      for (let b = 3; b >= 0; b--) { const bit = (v >> b) & 1; if (bit) t1++; else t0++; h += `<div class="bit ${bit ? 'b1' : 'b0'}"></div>`; }
+      return h;
+    }).join('');
+    document.getElementById('bi-bi').textContent = `1'ere: ${t1} · 0'ere: ${t0} · ${t1} er ${t1 % 2 === 0 ? 'LIGE → JA' : 'ULIGE → NEJ'}`;
+
+    const bp = document.getElementById('bpanel');
+    bp.style.display = 'block'; bp.className = 'card fade-in';
+
+    // Save to history
+    const hist = loadH();
+    hist.push({ question: q, answer, height: blk.height, epoch: blk.epoch, hash: blk.hash, dt, n, src: blk._src, root });
+    saveH(hist); renderH(hist);
+
+  } catch (e) {
+    ansEl.className = 'answer-main no';
+    ansEl.textContent = '!';
+    st('fejl: ' + e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// Enter key support
+document.getElementById('qin').addEventListener('keydown', e => { if (e.key === 'Enter') ask(); });
+
+// Load history on start
+(function () {
+  const hist = loadH();
+  if (hist.length) {
+    n = Math.max(...hist.map(e => e.n || 0));
+    document.getElementById('cnt').textContent = n;
+    renderH(hist);
+  }
+})();
+</script>
+</body>
+</html>
