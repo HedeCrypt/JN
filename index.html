@@ -160,6 +160,7 @@
     font-family:var(--mono); font-size:11px; color:var(--muted);
     display:block; margin-bottom:8px; letter-spacing:.1em; text-transform:uppercase;
   }
+  .btn {
     width:100%; font-family:var(--sans); font-size:15px; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
     background:transparent; border:1.5px solid var(--border2); border-radius:8px;
     color:var(--text); padding:18px; cursor:pointer; transition:background .15s, border-color .15s, transform .08s;
@@ -347,8 +348,7 @@
 
   <!-- Silent mode note -->
   <div id="silent-panel" style="display:none; margin-bottom:1rem; font-family:var(--mono); font-size:11px; color:var(--muted); line-height:1.7; padding:10px 12px; background:var(--surface2); border:.5px solid var(--border); border-radius:8px;">
-    No input needed. Press Ask and the chain draws.<br/>
-    Works with Yes / No and Magic 8-Ball — switch mode to change the answer format.
+    No input needed. Press Ask and the chain draws.
   </div>
 
   <div id="question-section">
@@ -912,6 +912,20 @@ function onModeChange() {
   document.getElementById('silent-panel').style.display = mode === 'silent'      ? 'block' : 'none';
   document.getElementById('question-section').style.display = (mode === 'silent' || mode === 'dice' || mode === 'fortune') ? 'none' : 'block';
 
+  // Dice mode: hardcore doesn't make sense — disable the toggle
+  const hcToggle = document.getElementById('hc-toggle');
+  const hcRow    = hcToggle.closest('.hardcore-row');
+  if (mode === 'dice') {
+    hcToggle.checked = false;
+    hardcoreSession.clear();
+    hcRow.style.opacity = '0.3';
+    hcRow.style.pointerEvents = 'none';
+  } else {
+    hcRow.style.opacity = '';
+    hcRow.style.pointerEvents = '';
+  }
+  document.getElementById('hc-badge').classList.toggle('visible', isHardcore());
+
   // Init MC on first open
   if (mode === 'multichoice' && document.querySelectorAll('.mc-input').length === 0) mcInit();
 
@@ -981,7 +995,15 @@ const PROTESTS = [
 
 function isHardcore() { return document.getElementById('hc-toggle').checked; }
 
+// Hardcore session: tracks questions asked while hardcore is active this session.
+// Cleared when the toggle is switched off — so toggling back on starts fresh.
+let hardcoreSession = new Set();
+
 function onHardcoreChange() {
+  if (!isHardcore()) {
+    // Toggled OFF — clear session so next activation starts fresh
+    hardcoreSession.clear();
+  }
   document.getElementById('hc-badge').classList.toggle('visible', isHardcore());
   updatePlaceholder();
 }
@@ -1002,10 +1024,11 @@ function updatePlaceholder() {
 }
 
 function alreadyAnswered(q) {
-  const hist = loadH();
-  // Empty question is a valid key — use a sentinel so it matches itself
   const key = normQ(q) || '__no_question__';
-  return hist.find(e => (normQ(e.question) || '__no_question__') === key) || null;
+  if (!hardcoreSession.has(key)) return null;
+  // Find the actual entry from history to show in protest
+  const hist = loadH();
+  return hist.slice().reverse().find(e => (normQ(e.question) || '__no_question__') === key) || { answer: '?', n: '?' };
 }
 
 function showProtest(q, prev) {
@@ -1029,14 +1052,14 @@ function showProtest(q, prev) {
   ansEl.innerHTML = `<div class="protest-wrap">
     <div class="protest-msg">${p.msg}</div>
     <div class="protest-sub">${escHTML(sub)}<br/><br/>
-      Previous answer: <strong style="color:var(--no)">${escHTML(prev.answer)}</strong>
+      Previous answer: <strong style="color:var(--${prev.tone||'no'})">${escHTML(prev.answer)}</strong>
       &nbsp;·&nbsp; question #${prev.n}
     </div>
     <button class="protest-override" onclick="askAnyway()">
       (I understand — ask anyway and record as a new attempt)
     </button>
   </div>`;
-  catEl.textContent = 'hardcore mode';
+  catEl.textContent = '⚑ hardcore mode is active — first answer stands';
   catEl.className = 'answer-cat no';
   ansQ.textContent = q ? '"' + q + '"' : '';
 }
@@ -1153,6 +1176,8 @@ async function ask() {
     bp.style.display='block'; bp.className='card fade-in';
 
     const hist=loadH(); hist.push(entry); saveH(hist); renderH(hist);
+    // Register this key in hardcore session so next ask is blocked
+    if (isHardcore()) hardcoreSession.add(normQ(hcKey) || '__no_question__');
 
   } catch(e) {
     ansEl.className='answer-main no size-xl'; ansEl.textContent='!'; st('error: '+e.message);
