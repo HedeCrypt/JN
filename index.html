@@ -108,9 +108,10 @@
     cursor:pointer; border:none; background:none; padding:4px; transition:color .15s; display:block; width:100%;
   }
   .protest-override:hover { color:var(--muted); }
-    width:100%; font-family:var(--sans); font-size:13px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
-    background:transparent; border:1px solid var(--border2); border-radius:8px;
-    color:var(--text); padding:14px; cursor:pointer; transition:background .15s, border-color .15s, transform .08s;
+  .btn {
+    width:100%; font-family:var(--sans); font-size:15px; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
+    background:transparent; border:1.5px solid var(--border2); border-radius:8px;
+    color:var(--text); padding:18px; cursor:pointer; transition:background .15s, border-color .15s, transform .08s;
   }
   .btn:hover { background:var(--surface2); border-color:var(--faint); }
   .btn:active { transform:scale(.98); }
@@ -257,7 +258,7 @@
     <span class="hardcore-label">hardcore mode</span>
     <span class="hardcore-badge" id="hc-badge">ACTIVE</span>
     <label class="toggle-wrap">
-      <input type="checkbox" id="hc-toggle" onchange="onHardcoreChange()"/>
+      <input type="checkbox" id="hc-toggle" checked onchange="onHardcoreChange()"/>
       <span class="toggle-track"></span>
     </label>
   </div>
@@ -465,9 +466,9 @@ function renderMerkleSVG(levels, leafLabels, lh) {
       const py=(depth-1-pl)*(BOX_H+GAP_Y)+BOX_H/2+10;
       const cy=(depth-1-li)*(BOX_H+GAP_Y)+BOX_H/2+10;
       const px=pos[pl][pi];
-      for (const ci of [c1,c2]) {
-        if (ci!==c2||c1!==c2) lines+=`<line x1="${pos[li][ci]}" y1="${cy}" x2="${px}" y2="${py}" stroke="${BORDER}" stroke-width="1"/>`;
-      }
+      // Always draw line from c1; only draw c2 separately if it differs
+      lines+=`<line x1="${pos[li][c1]}" y1="${cy}" x2="${px}" y2="${py}" stroke="${BORDER}" stroke-width="1"/>`;
+      if (c1!==c2) lines+=`<line x1="${pos[li][c2]}" y1="${cy}" x2="${px}" y2="${py}" stroke="${BORDER}" stroke-width="1"/>`;
     }
   }
   for (let li=0; li<depth; li++) {
@@ -714,10 +715,10 @@ function onModeChange() {
   if (ansEl.textContent === '?' || ansEl.innerHTML.includes('spinner')) return;
   ansEl.textContent = '?';
   ansEl.className = 'answer-main neutral size-xl';
-  catEl.textContent = '';
-  catEl.className = 'answer-cat';
+  catEl.textContent = ''; catEl.className = 'answer-cat';
   document.getElementById('ansq').textContent = '';
   document.getElementById('bpanel').style.display = 'none';
+  updatePlaceholder();
 }
 
 function sizeClass(text) {
@@ -731,22 +732,49 @@ function sizeClass(text) {
 
 /* ── Hardcore mode ── */
 const PROTESTS = [
-  { msg: "The blockchain already answered this.", sub: "The universe doesn't do reruns." },
-  { msg: "SHA-256 is not a negotiation tool.", sub: "The chain has spoken. Immutably." },
+  { msg: "The chain already answered this.", sub: "The universe doesn't do reruns." },
+  { msg: "SHA-256 is not a negotiation tool.", sub: "The ledger has spoken. Immutably." },
   { msg: "You asked. The chain answered.", sub: "Your feelings are not a valid input." },
   { msg: "The entropy has been spent.", sub: "This answer is as permanent as the block it came from." },
   { msg: "First answer stands.", sub: "That's not a rule — that's just physics." },
   { msg: "The Merkle tree does not do re-runs.", sub: "Block #{h} already settled this." },
-  { msg: "Still you?", sub: "The answer hasn't changed. Neither has the blockchain." },
+  { msg: "Still you?", sub: "The answer hasn't changed. Neither has the distributed ledger." },
   { msg: "One question. One answer.", sub: "You already have yours." },
   { msg: "I answered this with cryptographic certainty.", sub: "What part of 'immutable' needs clarification?" },
   { msg: "Asking again won't rewrite the hash.", sub: "Trust the tree." },
+  { msg: "The tree has spoken.", sub: "Block #{h} is permanent. So is this." },
+  { msg: "This isn't a negotiation.", sub: "It's a cryptographic proof." },
+  { msg: "You had one shot.", sub: "The chain gave you an honest answer. Return the favour." },
+  { msg: "No.", sub: "Not because of the answer — because you're trying to undo it." },
+  { msg: "Come on.", sub: "You know what the answer is. You just don't like it." },
+  { msg: "The hash doesn't bend to persistence.", sub: "Neither do I." },
+  { msg: "Noted. Still no.", sub: "Block #{h} is not going anywhere." },
+  { msg: "That answer cost real entropy.", sub: "Six fields. SHA-256. A Merkle root. Don't waste it." },
+  { msg: "Verdict: final.", sub: "The record is immutable. So is this moment." },
+  { msg: "You're staring at a cryptographic mirror.", sub: "It will keep showing you the same thing." },
+  { msg: "The math already ran.", sub: "Rerunning it won't help. The inputs haven't changed." },
+  { msg: "Integrity means something.", sub: "That answer was earned. Let it stand." },
+  { msg: "This is what hardcore means.", sub: "First answer. No exceptions. No appeals." },
+  { msg: "Your question is in the ledger.", sub: "Its answer is right next to it. Permanently." },
+  { msg: "The result was deterministic.", sub: "So is this refusal." },
 ];
 
 function isHardcore() { return document.getElementById('hc-toggle').checked; }
 
 function onHardcoreChange() {
   document.getElementById('hc-badge').classList.toggle('visible', isHardcore());
+  updatePlaceholder();
+}
+
+const PLACEHOLDERS = {
+  yesno:  'Ask a yes/no question — e.g. "Should I take the job?"',
+  '8ball': 'Ask anything — the 8-ball will find an answer',
+};
+
+function updatePlaceholder() {
+  const mode  = document.getElementById('mode-select').value;
+  const input = document.getElementById('qin');
+  input.placeholder = PLACEHOLDERS[mode] || PLACEHOLDERS.yesno;
 }
 
 function alreadyAnswered(q) {
@@ -761,13 +789,22 @@ function showProtest(q, prev) {
   const catEl = document.getElementById('anscat');
   const ansQ  = document.getElementById('ansq');
 
-  const p = PROTESTS[Math.floor(Math.random() * PROTESTS.length)];
+  // Pick a protest the user hasn't seen recently (avoid last 5)
+  const seen = (JSON.parse(sessionStorage.getItem('seen_protests')||'[]'));
+  const pool = PROTESTS.filter((_,i)=>!seen.includes(i));
+  const available = pool.length ? pool : PROTESTS;
+  const idx = Math.floor(Math.random() * available.length);
+  const p = available[idx];
+  const globalIdx = PROTESTS.indexOf(p);
+  seen.push(globalIdx); if (seen.length>8) seen.shift();
+  sessionStorage.setItem('seen_protests', JSON.stringify(seen));
+
   const sub = p.sub.replace('#{h}', prev.height || '?');
 
   ansEl.className = 'answer-main no size-sm fade-in';
   ansEl.innerHTML = `<div class="protest-wrap">
     <div class="protest-msg">${p.msg}</div>
-    <div class="protest-sub">${sub}<br/><br/>
+    <div class="protest-sub">${escHTML(sub)}<br/><br/>
       Previous answer: <strong style="color:var(--no)">${escHTML(prev.answer)}</strong>
       &nbsp;·&nbsp; question #${prev.n}
     </div>
@@ -867,6 +904,8 @@ async function ask() {
 document.getElementById('qin').addEventListener('keydown', e=>{ if(e.key==='Enter') ask(); });
 
 (function(){
+  updatePlaceholder();
+  onHardcoreChange(); // sync badge with default checked state
   const hist=loadH();
   if(hist.length){
     n=Math.max(...hist.map(e=>e.n||0));
