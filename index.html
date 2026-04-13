@@ -169,16 +169,44 @@
   .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
   .btn-clear { background: none; border: .5px solid var(--no-dim); border-radius: 6px; font-family: var(--mono); font-size: 11px; color: var(--no); padding: 5px 12px; cursor: pointer; transition: background .12s; }
   .btn-clear:hover { background: var(--no-bg); }
-  .hist-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: .5px solid var(--border); cursor: pointer; }
-  .hist-item:last-child { border-bottom: none; }
-  .hist-item:hover { background: rgba(255,255,255,.01); }
-  .hist-ans { font-family: var(--serif); font-size: 22px; font-weight: 900; min-width: 42px; margin-top: 1px; }
+
+  /* Group = one unique question */
+  .hgroup { border-bottom: .5px solid var(--border); padding: 12px 0; }
+  .hgroup:last-child { border-bottom: none; }
+
+  /* Primary (latest) row */
+  .hprimary { display: flex; align-items: flex-start; gap: 12px; cursor: pointer; }
+  .hprimary:hover .hq { text-decoration: underline; text-decoration-color: var(--faint); }
+
+  .hist-ans { font-family: var(--serif); font-size: 22px; font-weight: 900; min-width: 42px; margin-top: 1px; flex-shrink: 0; }
   .hist-ans.yes { color: var(--yes); }
   .hist-ans.no  { color: var(--no); }
-  .hist-q   { font-size: 13px; color: var(--text); line-height: 1.4; }
-  .hist-meta { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 4px; line-height: 1.8; }
-  .hist-detail { display: none; margin-top: 8px; }
-  .hist-item.open .hist-detail { display: block; }
+  .hq   { font-size: 13px; color: var(--text); line-height: 1.4; }
+  .hmeta { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px; line-height: 1.8; }
+
+  /* Row actions: delete + expand */
+  .hactions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; margin-left: auto; opacity: 0; transition: opacity .15s; }
+  .hprimary:hover .hactions { opacity: 1; }
+  .btn-del { background: none; border: .5px solid var(--no-dim); border-radius: 4px; font-family: var(--mono); font-size: 10px; color: var(--no); padding: 2px 7px; cursor: pointer; transition: background .1s; white-space: nowrap; }
+  .btn-del:hover { background: var(--no-bg); }
+  .btn-expand { background: none; border: .5px solid var(--border2); border-radius: 4px; font-family: var(--mono); font-size: 10px; color: var(--muted); padding: 2px 7px; cursor: pointer; transition: background .1s; white-space: nowrap; }
+  .btn-expand:hover { background: var(--surface2); color: var(--text); }
+
+  /* Expandable details (verify data) */
+  .hdetail { display: none; margin-top: 10px; margin-left: 54px; }
+  .hgroup.open .hdetail { display: block; }
+
+  /* Previous attempts */
+  .hprev-list { display: none; margin-top: 8px; margin-left: 54px; border-left: 1px solid var(--border); padding-left: 12px; }
+  .hgroup.prev-open .hprev-list { display: block; }
+  .hprev-item { display: flex; align-items: flex-start; gap: 8px; padding: 7px 0; border-bottom: .5px solid var(--border); }
+  .hprev-item:last-child { border-bottom: none; }
+  .hprev-ans { font-family: var(--serif); font-size: 15px; font-weight: 900; min-width: 30px; flex-shrink: 0; }
+  .hprev-ans.yes { color: var(--yes); }
+  .hprev-ans.no  { color: var(--no); }
+  .hprev-meta { font-family: var(--mono); font-size: 10px; color: var(--muted); line-height: 1.8; flex: 1; min-width: 0; }
+  .hprev-actions { opacity: 0; transition: opacity .12s; flex-shrink: 0; }
+  .hprev-item:hover .hprev-actions { opacity: 1; }
 
   /* ── Footer ── */
   footer { margin-top: 3rem; text-align: center; font-family: var(--mono); font-size: 10px; color: var(--faint); line-height: 1.8; }
@@ -492,27 +520,7 @@ function makeField(key, value, canCopy = false, full = null) {
 function loadH() { try { return JSON.parse(localStorage.getItem('oracle_h') || '[]'); } catch { return []; } }
 function saveH(e) { try { localStorage.setItem('oracle_h', JSON.stringify(e)); } catch {} }
 
-function renderH(entries) {
-  const p = document.getElementById('hpanel'), l = document.getElementById('hlist');
-  if (!entries.length) { p.style.display = 'none'; return; }
-  p.style.display = 'block';
-  l.innerHTML = entries.slice().reverse().map((e, i) => {
-    const id = 'he-' + i;
-    return `<div class="hist-item" id="${id}" onclick="toggleHist('${id}')">
-      <div class="hist-ans ${e.answer === 'JA' ? 'yes' : 'no'}">${e.answer}</div>
-      <div style="flex:1;min-width:0;">
-        <div class="hist-q">${e.question || '<em style="color:var(--muted)">intet spørgsmål</em>'}</div>
-        <div class="hist-meta">${e.dt} · #${e.n} · ${e.src}</div>
-        <div class="hist-detail">
-          <div style="display:flex;justify-content:flex-end;margin-bottom:4px;">
-            <button class="copy-btn" onclick="event.stopPropagation();copyText(\`${buildVerifyText(e)}\`, this)">⎘ kopier verificeringsdata</button>
-          </div>
-          <div class="verify-block">${buildVerifyText(e)}</div>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
+function normQ(q) { return (q || '').trim().toLowerCase(); }
 
 function buildVerifyText(e) {
   return [
@@ -535,9 +543,105 @@ function buildVerifyText(e) {
   ].join('\n');
 }
 
-function toggleHist(id) {
-  const el = document.getElementById(id);
-  el.classList.toggle('open');
+function deleteGroup(key) {
+  const hist = loadH().filter(e => normQ(e.question) !== key);
+  saveH(hist); renderH(hist);
+}
+
+function deleteEntry(entryN) {
+  const hist = loadH().filter(e => e.n !== entryN);
+  saveH(hist); renderH(hist);
+}
+
+function toggleGroup(gid, mode) {
+  // mode: 'detail' or 'prev'
+  const el = document.getElementById(gid);
+  if (!el) return;
+  const cls = mode === 'prev' ? 'prev-open' : 'open';
+  el.classList.toggle(cls);
+  // update button label
+  const btnId = gid + '-' + mode + 'btn';
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  if (mode === 'prev') {
+    const count = parseInt(btn.dataset.count || 0);
+    btn.textContent = el.classList.contains('prev-open') ? '▼ skjul tidligere' : `▶ ${count} tidligere forsøg`;
+  } else {
+    btn.textContent = el.classList.contains('open') ? '▲ skjul detaljer' : '▼ vis detaljer';
+  }
+}
+
+function renderH(entries) {
+  const p = document.getElementById('hpanel'), l = document.getElementById('hlist');
+  if (!entries.length) { p.style.display = 'none'; return; }
+  p.style.display = 'block';
+
+  // Group by normalized question, preserving insertion order of first occurrence
+  const groupMap = new Map();
+  for (const e of entries) {
+    const k = normQ(e.question);
+    if (!groupMap.has(k)) groupMap.set(k, []);
+    groupMap.get(k).push(e);
+  }
+
+  // Sort groups by latest entry timestamp descending
+  const groups = [...groupMap.entries()].map(([k, items]) => {
+    items.sort((a, b) => b.n - a.n); // latest first
+    return { k, latest: items[0], prev: items.slice(1) };
+  }).sort((a, b) => b.latest.n - a.latest.n);
+
+  l.innerHTML = groups.map((g, gi) => {
+    const gid = 'hg-' + gi;
+    const e = g.latest;
+    const ansCls = e.answer === 'JA' ? 'yes' : 'no';
+    const vtext = buildVerifyText(e).replace(/`/g, "'");
+    const qDisplay = e.question
+      ? `<span class="hq">${e.question}</span>`
+      : `<em style="color:var(--muted);font-size:12px;">intet spørgsmål</em>`;
+
+    const prevHtml = g.prev.length ? g.prev.map(pe => {
+      const pAnsCls = pe.answer === 'JA' ? 'yes' : 'no';
+      const pvtext = buildVerifyText(pe).replace(/`/g, "'");
+      return `<div class="hprev-item">
+        <div class="hprev-ans ${pAnsCls}">${pe.answer}</div>
+        <div class="hprev-meta">${pe.dt} · spørgsmål #${pe.n} · ${pe.src}<br/>${sh(pe.hash)}</div>
+        <div class="hprev-actions">
+          <button class="copy-btn" onclick="event.stopPropagation();copyText(\`${pvtext}\`,this)" style="margin-right:4px;">⎘</button>
+          <button class="btn-del" onclick="event.stopPropagation();deleteEntry(${pe.n})">slet</button>
+        </div>
+      </div>`;
+    }).join('') : '';
+
+    const prevToggle = g.prev.length
+      ? `<button class="btn-expand" id="${gid}-prevbtn" data-count="${g.prev.length}"
+           onclick="event.stopPropagation();toggleGroup('${gid}','prev')">▶ ${g.prev.length} tidligere forsøg</button>`
+      : '';
+
+    return `<div class="hgroup" id="${gid}">
+      <div class="hprimary" onclick="toggleGroup('${gid}','detail')">
+        <div class="hist-ans ${ansCls}">${e.answer}</div>
+        <div style="flex:1;min-width:0;">
+          ${qDisplay}
+          <div class="hmeta">${e.dt} · spørgsmål #${e.n} · ${e.src}<br/>${sh(e.hash)}</div>
+          <div style="display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap;">
+            <button class="btn-expand" id="${gid}-detailbtn"
+              onclick="event.stopPropagation();toggleGroup('${gid}','detail')">▼ vis detaljer</button>
+            ${prevToggle}
+          </div>
+        </div>
+        <div class="hactions" onclick="event.stopPropagation();">
+          <button class="btn-del" onclick="deleteGroup('${g.k.replace(/'/g, "\\'")}')">slet</button>
+        </div>
+      </div>
+      <div class="hdetail">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:6px;">
+          <button class="copy-btn" onclick="copyText(\`${vtext}\`,this)">⎘ kopier verificeringsdata</button>
+        </div>
+        <div class="verify-block">${buildVerifyText(e)}</div>
+      </div>
+      ${g.prev.length ? `<div class="hprev-list">${prevHtml}</div>` : ''}
+    </div>`;
+  }).join('');
 }
 
 function clearH() { saveH([]); renderH([]); }
