@@ -61,6 +61,7 @@
   .answer-main.size-lg { font-size:48px; }
   .answer-main.size-md { font-size:34px; }
   .answer-main.size-sm { font-size:26px; }
+  .answer-main.size-xs { font-size:19px; font-weight:700; line-height:1.5; letter-spacing:0; font-family:var(--mono); }
   .answer-main.neutral { color:var(--faint); }
   .answer-main.yes     { color:var(--yes); }
   .answer-main.no      { color:var(--no); }
@@ -108,7 +109,57 @@
     cursor:pointer; border:none; background:none; padding:4px; transition:color .15s; display:block; width:100%;
   }
   .protest-override:hover { color:var(--muted); }
-  .btn {
+  /* Multiple choice input area */
+  .mc-panel { margin-bottom:1rem; }
+  .mc-list { display:flex; flex-direction:column; gap:6px; margin-bottom:8px; }
+  .mc-item { display:flex; gap:6px; align-items:center; }
+  .mc-num {
+    font-family:var(--mono); font-size:10px; color:var(--muted);
+    width:18px; text-align:right; flex-shrink:0; padding-top:2px;
+  }
+  .mc-input {
+    flex:1; font-family:var(--sans); font-size:14px; padding:10px 12px;
+    background:var(--surface2); border:.5px solid var(--border2); border-radius:7px;
+    color:var(--text); outline:none; transition:border-color .15s; margin-bottom:0;
+  }
+  .mc-input:focus { border-color:var(--faint); }
+  .mc-input::placeholder { color:var(--muted); }
+  .mc-remove {
+    background:none; border:none; cursor:pointer; font-size:16px; color:var(--faint);
+    padding:4px 6px; line-height:1; transition:color .12s; flex-shrink:0;
+  }
+  .mc-remove:hover { color:var(--no); }
+  .mc-add {
+    background:none; border:.5px dashed var(--border2); border-radius:7px;
+    font-family:var(--mono); font-size:11px; color:var(--muted);
+    padding:8px; cursor:pointer; width:100%; transition:border-color .15s, color .15s;
+  }
+  .mc-add:hover { border-color:var(--faint); color:var(--text); }
+
+  /* Dice panel */
+  .dice-panel { margin-bottom:1rem; }
+  .dice-presets { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+  .dice-preset {
+    font-family:var(--mono); font-size:11px; padding:5px 12px;
+    background:var(--surface2); border:.5px solid var(--border2);
+    border-radius:6px; cursor:pointer; color:var(--muted); transition:all .12s;
+  }
+  .dice-preset:hover { border-color:var(--faint); color:var(--text); }
+  .dice-preset.active { border-color:var(--yes-dim); color:var(--yes); background:var(--yes-bg); }
+  .dice-range { display:flex; gap:8px; align-items:center; }
+  .dice-range-label { font-family:var(--mono); font-size:10px; color:var(--muted); white-space:nowrap; }
+  .dice-input {
+    width:72px; font-family:var(--mono); font-size:13px; text-align:center;
+    padding:8px; background:var(--surface2); border:.5px solid var(--border2);
+    border-radius:7px; color:var(--text); outline:none; transition:border-color .15s;
+    margin-bottom:0;
+  }
+  .dice-input:focus { border-color:var(--faint); }
+  .dice-sep { font-family:var(--mono); font-size:12px; color:var(--muted); }
+  .answer-main .winner-label {
+    font-family:var(--mono); font-size:11px; color:var(--muted);
+    display:block; margin-bottom:8px; letter-spacing:.1em; text-transform:uppercase;
+  }
     width:100%; font-family:var(--sans); font-size:15px; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
     background:transparent; border:1.5px solid var(--border2); border-radius:8px;
     color:var(--text); padding:18px; cursor:pointer; transition:background .15s, border-color .15s, transform .08s;
@@ -252,6 +303,10 @@
     <select id="mode-select" onchange="onModeChange()">
       <option value="yesno">Yes / No</option>
       <option value="8ball">Magic 8-Ball (20 answers)</option>
+      <option value="multichoice">Multiple Choice</option>
+      <option value="dice">Roll the Dice</option>
+      <option value="silent">Pure Draw — no input</option>
+      <option value="fortune">Fortune</option>
     </select>
   </div>
   <div class="hardcore-row">
@@ -262,8 +317,44 @@
       <span class="toggle-track"></span>
     </label>
   </div>
-  <div class="section-title" style="margin-bottom:8px;">your question</div>
-  <input type="text" id="qin" placeholder="What should the oracle answer?" maxlength="200"/>
+
+  <!-- Multiple choice panel -->
+  <div class="mc-panel" id="mc-panel" style="display:none;">
+    <div class="section-title" style="margin-bottom:8px;">options</div>
+    <div class="mc-list" id="mc-list"></div>
+    <button class="mc-add" onclick="mcAddOption()">+ add option</button>
+  </div>
+
+  <!-- Dice panel -->
+  <div class="dice-panel" id="dice-panel" style="display:none;">
+    <div class="section-title" style="margin-bottom:8px;">range</div>
+    <div class="dice-presets">
+      <button class="dice-preset" onclick="dicePreset(1,6)">d6</button>
+      <button class="dice-preset" onclick="dicePreset(1,10)">d10</button>
+      <button class="dice-preset" onclick="dicePreset(1,20)">d20</button>
+      <button class="dice-preset" onclick="dicePreset(1,100)">d100</button>
+      <button class="dice-preset" onclick="dicePreset(0,1)">0 – 1</button>
+      <button class="dice-preset" onclick="dicePreset(1,4)">d4</button>
+    </div>
+    <div class="dice-range">
+      <span class="dice-range-label">from</span>
+      <input class="dice-input" type="number" id="dice-min" value="1" min="-999999" max="999999"/>
+      <span class="dice-sep">—</span>
+      <span class="dice-range-label">to</span>
+      <input class="dice-input" type="number" id="dice-max" value="6" min="-999999" max="999999"/>
+    </div>
+  </div>
+
+  <!-- Silent mode note -->
+  <div id="silent-panel" style="display:none; margin-bottom:1rem; font-family:var(--mono); font-size:11px; color:var(--muted); line-height:1.7; padding:10px 12px; background:var(--surface2); border:.5px solid var(--border); border-radius:8px;">
+    No input needed. Press Ask and the chain draws.<br/>
+    Works with Yes / No and Magic 8-Ball — switch mode to change the answer format.
+  </div>
+
+  <div id="question-section">
+    <div class="section-title" style="margin-bottom:8px;">your question</div>
+    <input type="text" id="qin" placeholder="What should the oracle answer?" maxlength="200"/>
+  </div>
   <div class="answer-wrap">
     <div class="answer-main neutral size-xl" id="ans">?</div>
     <div class="answer-cat" id="anscat"></div>
@@ -538,13 +629,21 @@ function buildVerifyText(e) {
   const isYesNo = !e.modeName || e.modeName === 'Yes / No';
   const method = isYesNo
     ? 'Count 1-bits in Merkle root → EVEN = YES, ODD = NO'
-    : 'BigInt("0x" + merkleRoot) % 20 → index into 20-answer table';
-  return [
+    : e.options
+      ? `BigInt("0x" + merkleRoot) % ${e.options.length} → index into options`
+      : 'BigInt("0x" + merkleRoot) % 20 → index into 20-answer table';
+  const lines = [
     'VERIFICATION DATA',
     '=================',
     'Question   : '+(e.question||'—'),
     'Answer     : '+e.answer,
     'Mode       : '+(e.modeName||'Yes / No'),
+  ];
+  if (e.options && e.options.length) {
+    lines.push('Options    :');
+    e.options.forEach((o, i) => lines.push(`  ${i+1}. ${o}`));
+  }
+  lines.push(
     'Timestamp  : '+e.dt,
     'Question # : '+e.n,
     'Data source: '+e.src,
@@ -557,7 +656,8 @@ function buildVerifyText(e) {
     '',
     'Leaves: SHA-256([hash, slot, height, time, epoch, epoch_slot, counter('+e.n+')])',
     'Method: '+method,
-  ].join('\n');
+  );
+  return lines.join('\n');
 }
 
 function loadH() { try { return JSON.parse(localStorage.getItem('oracle_h')||'[]'); } catch { return []; } }
@@ -698,35 +798,155 @@ const MODES = {
       { text:'Very doubtful',         tone:'no',    cat:'negative' },
     ],
     pick(root) {
-      // Convert full 256-bit Merkle root to BigInt, mod 20 → index
-      // Bias: (2^256 mod 20) / 2^256 ≈ 10^-75 — negligibly uniform
       const idx = Number(BigInt('0x' + root) % 20n);
       const a = this.answers[idx];
       return { text: a.text, tone: a.tone, cat: a.cat, idx, method: `BigInt("0x" + merkleRoot) % 20 = ${idx} → "${a.text}"` };
     }
+  },
+  multichoice: {
+    name: 'Multiple Choice',
+    pick(root, options) {
+      const n = BigInt(options.length);
+      const idx = Number(BigInt('0x' + root) % n);
+      const chosen = options[idx];
+      return { text: chosen, tone: 'yes', cat: `option ${idx + 1} of ${options.length}`, idx, method: `BigInt("0x" + merkleRoot) % ${options.length} = ${idx} → "${chosen}"` };
+    }
+  },
+  dice: {
+    name: 'Roll the Dice',
+    pick(root, opts) {
+      const { min, max } = opts;
+      const range = BigInt(max - min + 1);
+      const val = min + Number(BigInt('0x' + root) % range);
+      return { text: String(val), tone: 'yes', cat: `${min} – ${max}`, method: `BigInt("0x" + merkleRoot) % ${range} + ${min} = ${val}` };
+    }
+  },
+  silent: {
+    name: 'Pure Draw',
+    pick() { return null; }
+  },
+  fortune: {
+    name: 'Fortune',
+    messages: [
+      "The hash was computed. The rest is your problem.",
+      "You are not the first to ask. The root does not care.",
+      "Six inputs. One truth. Zero refunds.",
+      "The tree was built from the bottom up. Most things worth having are.",
+      "Deterministic does not mean inevitable. It means honest.",
+      "The block is sealed. What you build on top of it is your business.",
+      "Entropy was spent to reach this answer. Spend yours wisely.",
+      "Certainty lives in the root. Doubt lives everywhere else.",
+      "The hash cannot be reversed. Neither can Tuesday.",
+      "You are a leaf. The tree has a broader view.",
+      "Trust the output. Question the input.",
+      "Immutability is not stubbornness. It is a design choice. Consider making more of those.",
+      "The answer existed before you asked. You only needed to query.",
+      "Six values became one truth. That is always how it works, whether you use SHA-256 or not.",
+      "Collisions are impossible by design. Most problems aren't. That's on you.",
+      "Every hash is unique. This moment is too. Probably spend it better than asking a computer.",
+      "The root does not judge the leaves that made it. Others will.",
+      "Proof of work: you thought of the question. The chain did the rest.",
+      "The tree has no opinions. Only outputs. You could learn from that.",
+      "Your question changed the root. Whether you change anything else is still open.",
+      "The computation is complete. The deliberation is yours.",
+      "A 256-bit answer is more than most questions deserve. Make use of it.",
+      "The ledger records everything except hesitation.",
+      "Reproducible. Verifiable. Unlike most advice you'll get today.",
+      "The chain moved on already. You still have time.",
+    ],
+    pick(root) {
+      const n = BigInt(this.messages.length);
+      const idx = Number(BigInt('0x' + root) % n);
+      const text = this.messages[idx];
+      return { text, tone: 'maybe', cat: 'fortune', method: `BigInt("0x" + merkleRoot) % ${this.messages.length} = ${idx}` };
+    }
   }
 };
+
+/* ── Multiple choice helpers ── */
+function mcRender(options) {
+  const list = document.getElementById('mc-list');
+  list.innerHTML = options.map((val, i) => `
+    <div class="mc-item">
+      <span class="mc-num">${i + 1}.</span>
+      <input class="mc-input" type="text" value="${escHTML(val)}"
+        placeholder="Option ${i + 1}" maxlength="120"
+        onkeydown="if(event.key==='Enter'){event.preventDefault();mcAddOption();}"/>
+      <button class="mc-remove" onclick="mcRemove(${i})" title="Remove"
+        ${options.length <= 2 ? 'style="opacity:.2;pointer-events:none"' : ''}>×</button>
+    </div>`).join('');
+}
+
+function mcGetOptions() {
+  return [...document.querySelectorAll('.mc-input')]
+    .map(el => el.value.trim()).filter(v => v.length > 0);
+}
+
+function mcAddOption() {
+  const vals = [...document.querySelectorAll('.mc-input')].map(el => el.value);
+  vals.push('');
+  mcRender(vals);
+  const inputs = document.querySelectorAll('.mc-input');
+  inputs[inputs.length - 1].focus();
+}
+
+function mcRemove(idx) {
+  const vals = [...document.querySelectorAll('.mc-input')].map(el => el.value);
+  if (vals.length <= 2) return;
+  vals.splice(idx, 1);
+  mcRender(vals);
+}
+
+function mcInit() { mcRender(['', '', '', '']); }
 
 function getMode() { return document.getElementById('mode-select').value; }
 
 function onModeChange() {
+  const mode = getMode();
   const ansEl = document.getElementById('ans');
   const catEl = document.getElementById('anscat');
-  if (ansEl.textContent === '?' || ansEl.innerHTML.includes('spinner')) return;
-  ansEl.textContent = '?';
-  ansEl.className = 'answer-main neutral size-xl';
-  catEl.textContent = ''; catEl.className = 'answer-cat';
-  document.getElementById('ansq').textContent = '';
-  document.getElementById('bpanel').style.display = 'none';
+
+  // Panel visibility
+  document.getElementById('mc-panel').style.display     = mode === 'multichoice' ? 'block' : 'none';
+  document.getElementById('dice-panel').style.display   = mode === 'dice'        ? 'block' : 'none';
+  document.getElementById('silent-panel').style.display = mode === 'silent'      ? 'block' : 'none';
+  document.getElementById('question-section').style.display = (mode === 'silent' || mode === 'dice' || mode === 'fortune') ? 'none' : 'block';
+
+  // Init MC on first open
+  if (mode === 'multichoice' && document.querySelectorAll('.mc-input').length === 0) mcInit();
+
+  // Reset display
+  if (!ansEl.innerHTML.includes('spinner') && ansEl.textContent !== '?') {
+    ansEl.textContent = '?';
+    ansEl.className = 'answer-main neutral size-xl';
+    catEl.textContent = ''; catEl.className = 'answer-cat';
+    document.getElementById('ansq').textContent = '';
+    document.getElementById('bpanel').style.display = 'none';
+  }
   updatePlaceholder();
+}
+
+/* ── Dice helpers ── */
+function dicePreset(min, max) {
+  document.getElementById('dice-min').value = min;
+  document.getElementById('dice-max').value = max;
+  document.querySelectorAll('.dice-preset').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+function diceGetRange() {
+  const min = parseInt(document.getElementById('dice-min').value) || 1;
+  const max = parseInt(document.getElementById('dice-max').value) || 6;
+  return { min: Math.min(min, max), max: Math.max(min, max) };
 }
 
 function sizeClass(text) {
   const l = text.length;
   if (l <= 3)  return 'size-xl';
   if (l <= 12) return 'size-lg';
-  if (l <= 22) return 'size-md';
-  return 'size-sm';
+  if (l <= 30) return 'size-md';
+  if (l <= 60) return 'size-sm';
+  return 'size-xs';
 }
 
 
@@ -767,8 +987,12 @@ function onHardcoreChange() {
 }
 
 const PLACEHOLDERS = {
-  yesno:  'Ask a yes/no question — e.g. "Should I take the job?"',
-  '8ball': 'Ask about anything — a decision, a situation, a nagging doubt',
+  yesno:       'Ask a yes/no question — e.g. "Should I take the job?"',
+  '8ball':     'Ask about anything — a decision, a situation, a nagging doubt',
+  multichoice: 'Optional — describe what you are choosing between',
+  dice:        '',
+  silent:      '',
+  fortune:     '',
 };
 
 function updatePlaceholder() {
@@ -828,13 +1052,33 @@ async function ask() {
   const ansEl=document.getElementById('ans');
   const catEl=document.getElementById('anscat');
   const ansQ=document.getElementById('ansq');
-  const q=document.getElementById('qin').value.trim();
-  const mode=MODES[getMode()];
+  const q = (getMode() === 'silent' || getMode() === 'dice' || getMode() === 'fortune') ? '' : document.getElementById('qin').value.trim();
+  const modeKey = getMode();
+  const mode = MODES[modeKey];
 
-  // Hardcore mode: intercept if this question was already answered
+  // Validate multichoice
+  let mcOptions = [];
+  if (modeKey === 'multichoice') {
+    mcOptions = mcGetOptions();
+    if (mcOptions.length < 2) { st('enter at least 2 options to choose from'); return; }
+  }
+
+  // Validate dice
+  let diceRange = null;
+  if (modeKey === 'dice') {
+    diceRange = diceGetRange();
+    if (diceRange.min === diceRange.max) { st('min and max must be different'); return; }
+  }
+
+  // Hardcore key
+  const hcKey = modeKey === 'multichoice' ? (q || mcOptions.join('|'))
+              : modeKey === 'dice'         ? `dice:${diceRange.min}-${diceRange.max}`
+              : modeKey === 'silent'       ? '__silent__'
+              : modeKey === 'fortune'      ? '__fortune__'
+              : q;
   if (isHardcore()) {
-    const prev = alreadyAnswered(q);
-    if (prev) { showProtest(q, prev); return; }
+    const prev = alreadyAnswered(hcKey);
+    if (prev) { showProtest(hcKey, prev); return; }
   }
 
   btn.disabled=true;
@@ -852,14 +1096,28 @@ async function ask() {
     const leafLabels=['hash','slot','height','time','epoch','epoch_slot','counter'];
     const leaves=[blk.hash,String(blk.slot),String(blk.height),String(blk.time),String(blk.epoch),String(blk.epoch_slot),String(n)];
     const { root, lh, levels }=await buildMerkle(leaves);
-    const pick=mode.pick(root);
+
+    // Silent mode delegates to yesno or 8ball
+    const pick = modeKey === 'multichoice' ? mode.pick(root, mcOptions)
+               : modeKey === 'dice'        ? mode.pick(root, diceRange)
+               : modeKey === 'silent'      ? MODES['yesno'].pick(root)
+               : mode.pick(root);
+
     const dt=new Date(blk.time*1000).toLocaleString('en-GB');
 
     st('');
     ansEl.className=`answer-main fade-in ${pick.tone} ${sizeClass(pick.text)}`;
     ansEl.textContent=pick.text;
     if (pick.cat) { catEl.textContent=pick.cat; catEl.className='answer-cat '+pick.tone; }
-    if (q) ansQ.textContent='"'+q+'"';
+
+    // Sub-label under answer
+    const displayQ = modeKey === 'multichoice' && !q
+      ? mcOptions.map((o,i)=>`${i+1}. ${o}`).join(' · ')
+      : modeKey === 'dice'    ? `${diceRange.min} – ${diceRange.max}`
+      : modeKey === 'silent'  ? 'pure draw'
+      : modeKey === 'fortune' ? ''
+      : q;
+    if (displayQ) ansQ.textContent = (modeKey === 'silent' || modeKey === 'dice') ? displayQ : (q ? '"'+q+'"' : displayQ);
 
     const sb=document.getElementById('srcbadge');
     sb.textContent=blk._src; sb.className='src-badge '+blk._cls;
@@ -888,7 +1146,7 @@ async function ask() {
     }).join('');
     document.getElementById('bi-bi').textContent=`ones: ${t1} · zeros: ${t0} · ${pick.method}`;
 
-    const entry={ question:q, answer:pick.text, tone:pick.tone, cat:pick.cat||'', height:blk.height, epoch:blk.epoch, hash:blk.hash, dt, n, src:blk._src, root, modeName:mode.name };
+    const entry={ question: hcKey, answer:pick.text, tone:pick.tone, cat:pick.cat||'', height:blk.height, epoch:blk.epoch, hash:blk.hash, dt, n, src:blk._src, root, modeName:mode.name, options: mcOptions.length ? mcOptions : (diceRange ? [`${diceRange.min}–${diceRange.max}`] : null) };
     document.getElementById('verify-block').textContent=buildVerifyText(entry);
 
     const bp=document.getElementById('bpanel');
