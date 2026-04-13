@@ -238,7 +238,7 @@
 <header>
   <div>
     <div class="site-title">Geeky8</div>
-    <div class="tagline">blockchain-verified answers · impossibly random · fully auditable</div>
+    <div class="tagline">foretold by the chain · cryptographically derived · fully auditable</div>
   </div>
   <div>
     <div class="counter-label">question #</div>
@@ -768,7 +768,7 @@ function onHardcoreChange() {
 
 const PLACEHOLDERS = {
   yesno:  'Ask a yes/no question — e.g. "Should I take the job?"',
-  '8ball': 'Ask anything — the 8-ball will find an answer',
+  '8ball': 'Ask about anything — a decision, a situation, a nagging doubt',
 };
 
 function updatePlaceholder() {
@@ -778,10 +778,10 @@ function updatePlaceholder() {
 }
 
 function alreadyAnswered(q) {
-  if (!q) return null;
   const hist = loadH();
-  const key = normQ(q);
-  return hist.find(e => normQ(e.question) === key) || null;
+  // Empty question is a valid key — use a sentinel so it matches itself
+  const key = normQ(q) || '__no_question__';
+  return hist.find(e => (normQ(e.question) || '__no_question__') === key) || null;
 }
 
 function showProtest(q, prev) {
@@ -831,8 +831,8 @@ async function ask() {
   const q=document.getElementById('qin').value.trim();
   const mode=MODES[getMode()];
 
-  // Hardcore mode: intercept if question was already answered
-  if (isHardcore() && q) {
+  // Hardcore mode: intercept if this question was already answered
+  if (isHardcore()) {
     const prev = alreadyAnswered(q);
     if (prev) { showProtest(q, prev); return; }
   }
