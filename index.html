@@ -225,17 +225,15 @@
   .btn-clear:hover { background:var(--no-bg); }
   .hgroup { border-bottom:.5px solid var(--border); padding:12px 0; }
   .hgroup:last-child { border-bottom:none; }
-  .hprimary { display:flex; align-items:flex-start; gap:12px; cursor:pointer; }
+  .hprimary { display:flex; flex-direction:column; gap:4px; cursor:pointer; }
   .hprimary:hover .hq { text-decoration:underline; text-decoration-color:var(--faint); }
-  .hist-ans { font-family:var(--serif); font-size:22px; font-weight:900; min-width:42px; margin-top:1px; flex-shrink:0; }
+  .hist-ans { font-family:var(--serif); font-size:22px; font-weight:900; line-height:1.2; }
   .hist-ans.yes { color:var(--yes); } .hist-ans.no { color:var(--no); }
   .hist-ans.maybe { color:var(--amber); }
-  /* Fortune cookie history item — full-width layout, no left answer column */
-  .hgroup.is-fortune .hprimary { flex-direction:column; gap:4px; }
-  .hgroup.is-fortune .hist-ans {
+  /* Fortune cookie — mono italic */
+  .hist-ans.fortune-entry {
     font-family:var(--mono); font-size:12px; font-weight:400; font-style:italic;
-    min-width:0; flex-shrink:1; line-height:1.65; white-space:normal;
-    word-break:normal; overflow-wrap:break-word; width:100%;
+    line-height:1.65; word-break:normal; overflow-wrap:break-word;
   }
   .hq { font-size:13px; color:var(--text); line-height:1.4; }
   .hmeta { font-family:var(--mono); font-size:10px; color:var(--muted); margin-top:3px; line-height:1.8; }
@@ -411,8 +409,8 @@
   <div class="step">
     <div class="step-num">1</div>
     <div class="step-body">
-      <div class="step-head">Fetch a live block from the Cardano blockchain</div>
-      <div class="step-desc">When you ask a question, the app contacts the Cardano mainnet and retrieves the most recently confirmed block. This block contains a <code>hash</code>, <code>slot</code>, <code>height</code>, <code>timestamp</code>, <code>epoch</code>, and <code>epoch slot</code> — all values determined by thousands of independent validators around the world. No single person controls or can predict these numbers.</div>
+      <div class="step-head">Fetch a live block from the Cardano network</div>
+      <div class="step-desc">When you ask, the app retrieves the most recently confirmed block from the Cardano mainnet. It contains a <code>hash</code>, <code>slot</code>, <code>height</code>, <code>timestamp</code>, <code>epoch</code>, and <code>epoch slot</code> — all determined by thousands of independent validators. No single person controls or can predict these values.</div>
     </div>
   </div>
   <hr class="step-hr"/>
@@ -420,8 +418,8 @@
   <div class="step">
     <div class="step-num">2</div>
     <div class="step-body">
-      <div class="step-head">Add a question counter as a seventh input</div>
-      <div class="step-desc">A counter tracking how many times you have asked is added as an extra input. This means every question produces a unique result — even if the underlying blockchain block has not changed yet. Asking twice within the same block gives two completely different answers.</div>
+      <div class="step-head">Add a counter as a seventh input</div>
+      <div class="step-desc">A counter tracking how many times you have asked is added alongside the block data. This means every press produces a unique result — even if the underlying block has not changed yet. Two questions asked within the same block will always get different answers.</div>
     </div>
   </div>
   <hr class="step-hr"/>
@@ -429,8 +427,8 @@
   <div class="step">
     <div class="step-num">3</div>
     <div class="step-body">
-      <div class="step-head">Hash each value with SHA-256 to form the tree leaves</div>
-      <div class="step-desc">Each of the seven values is individually hashed using <code>SHA-256</code>, producing seven 64-character hexadecimal strings. These are the <em>leaves</em> of the Merkle tree. SHA-256 is a one-way cryptographic function — the same input always gives the same output, but the output cannot be reversed to find the input. Even a tiny change in input produces a completely different hash.</div>
+      <div class="step-head">Hash all seven values with SHA-256 to form the tree leaves</div>
+      <div class="step-desc">Each of the seven values is individually hashed using <code>SHA-256</code>, producing seven 64-character hexadecimal strings — the <em>leaves</em> of the Merkle tree. SHA-256 is a one-way function: the same input always gives the same output, but the output cannot be reversed. Even a single character change produces a completely different hash.</div>
     </div>
   </div>
   <hr class="step-hr"/>
@@ -439,7 +437,7 @@
     <div class="step-num">4</div>
     <div class="step-body">
       <div class="step-head">Build a Merkle tree up to a single root</div>
-      <div class="step-desc">Adjacent leaf hashes are concatenated and hashed together. The results are paired again and hashed, repeating until only one hash remains — the <code>Merkle root</code>. This is the exact same structure used inside Bitcoin and Cardano to verify the integrity of every transaction. Changing even one character anywhere in the input completely changes the root.</div>
+      <div class="step-desc">Adjacent leaf hashes are concatenated and hashed together, then paired again and hashed, repeating until only one value remains — the <code>Merkle root</code>. This is the same structure used inside Cardano to verify the integrity of every transaction. Changing anything anywhere in the inputs changes the root completely.</div>
     </div>
   </div>
   <hr class="step-hr"/>
@@ -447,8 +445,21 @@
   <div class="step">
     <div class="step-num">5</div>
     <div class="step-body">
-      <div class="step-head">Count the 1-bits in the root → YES or NO</div>
-      <div class="step-desc">The 64 hex characters of the Merkle root are converted to 256 binary bits. The total number of <code>1</code>-bits is counted. If the count is <code>even</code>, the answer is <strong>YES</strong>. If <code>odd</code>, the answer is <strong>NO</strong>. Because the root is derived from live blockchain data, neither outcome can be known or manipulated before the block is produced.</div>
+      <div class="step-head">The Merkle root determines the answer — differently per mode</div>
+      <div class="step-desc">How the root becomes an answer depends on the mode you have chosen:
+        <br/><br/>
+        <code>Yes / No</code> — the 256 bits of the root are counted. An even number of 1-bits gives YES, odd gives NO.
+        <br/><br/>
+        <code>Magic 8-Ball</code> — the root is converted to a large integer and divided by 20. The remainder selects one of the 20 classic answers.
+        <br/><br/>
+        <code>Multiple Choice</code> — same method, but divided by however many options you entered. Every option has an exactly equal chance.
+        <br/><br/>
+        <code>Roll the Dice</code> — divided by the size of your chosen range. Works for any range, not just standard dice.
+        <br/><br/>
+        <code>Pure Draw</code> — same as Yes / No, but with no question input. Just the block data and the counter.
+        <br/><br/>
+        <code>Fortune Cookie</code> — selects one of 25 messages. The colour is derived from a separate part of the root.
+      </div>
     </div>
   </div>
   <hr class="step-hr"/>
@@ -457,7 +468,7 @@
     <div class="step-num">6</div>
     <div class="step-body">
       <div class="step-head">Every result is independently verifiable</div>
-      <div class="step-desc">All data used is shown: the block hash, every intermediate hash, the full Merkle root, and the bit count. Anyone can look up the block on a public Cardano explorer, repeat the SHA-256 computations themselves, rebuild the tree, and confirm the answer. The result is not a random number — it is a <em>deterministic outcome</em> from public, tamper-proof data.</div>
+      <div class="step-desc">All data is shown after each answer: the block hash, every intermediate hash, the full Merkle root, and the exact selection method. Anyone can look up the block on a public Cardano explorer, repeat the SHA-256 computations, rebuild the tree, and confirm the result themselves. The answer is not a random number — it is a <em>deterministic outcome</em> from public, tamper-proof data.</div>
     </div>
   </div>
 </div>
@@ -640,10 +651,15 @@ function buildVerifyText(e) {
   else
     method = 'BigInt("0x" + merkleRoot) % n → index into answer table';
 
+  // For multichoice the question field contains pipe-joined options when no question was typed
+  const questionDisplay = (mode === 'Multiple Choice' && e.question && e.question.includes('|'))
+    ? '—'
+    : (e.question && !e.question.startsWith('__') ? e.question : '—');
+
   const lines = [
     'VERIFICATION DATA',
     '=================',
-    'Question   : '+(e.question && !e.question.startsWith('__') ? e.question : '—'),
+    'Question   : '+questionDisplay,
     'Answer     : '+e.answer,
     'Mode       : '+mode,
   ];
@@ -742,7 +758,7 @@ function renderH(entries) {
     return `<div class="hgroup${isFortune?' is-fortune':''}" id="${gid}">
       <div class="hprimary" onclick="toggleGroup('${gid}','detail')">
         <div class="hist-ans ${ansCls}"${ansStyle}>${escHTML(e.answer)}</div>
-        <div style="flex:1;min-width:0;${isFortune?'display:none':''}">
+        <div>
           ${qDisplay}
           <div class="hmeta">${e.dt} · question #${e.n} · ${e.src}${e.modeName?' · '+e.modeName:''}<br/>${sh(e.hash)}</div>
           <div style="display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap;">
@@ -751,12 +767,6 @@ function renderH(entries) {
             ${prevToggle}
           </div>
         </div>
-        ${isFortune ? `<div style="width:100%"><div class="hmeta">${e.dt} · ${e.src} · ${e.modeName}<br/>${sh(e.hash)}</div>
-          <div style="display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap;">
-            <button class="btn-expand" id="${gid}-detailbtn"
-              onclick="event.stopPropagation();toggleGroup('${gid}','detail')">▼ show details</button>
-            ${prevToggle}
-          </div></div>` : ''}
         <div class="hactions" onclick="event.stopPropagation();">
           <button class="btn-del" onclick="deleteGroup('${g.k.replace(/'/g,"\\'")}')">delete</button>
         </div>
