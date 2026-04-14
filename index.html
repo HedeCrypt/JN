@@ -229,6 +229,14 @@
   .hprimary:hover .hq { text-decoration:underline; text-decoration-color:var(--faint); }
   .hist-ans { font-family:var(--serif); font-size:22px; font-weight:900; min-width:42px; margin-top:1px; flex-shrink:0; }
   .hist-ans.yes { color:var(--yes); } .hist-ans.no { color:var(--no); }
+  .hist-ans.maybe { color:var(--amber); }
+  /* Fortune cookie history item — full-width layout, no left answer column */
+  .hgroup.is-fortune .hprimary { flex-direction:column; gap:4px; }
+  .hgroup.is-fortune .hist-ans {
+    font-family:var(--mono); font-size:12px; font-weight:400; font-style:italic;
+    min-width:0; flex-shrink:1; line-height:1.65; white-space:normal;
+    word-break:normal; overflow-wrap:break-word; width:100%;
+  }
   .hq { font-size:13px; color:var(--text); line-height:1.4; }
   .hmeta { font-family:var(--mono); font-size:10px; color:var(--muted); margin-top:3px; line-height:1.8; }
   .hactions { display:flex; gap:6px; align-items:center; flex-shrink:0; margin-left:auto; opacity:0; transition:opacity .15s; }
@@ -241,12 +249,13 @@
   .hgroup.open .hdetail { display:block; }
   .hprev-list { display:none; margin-top:8px; margin-left:54px; border-left:1px solid var(--border); padding-left:12px; }
   .hgroup.prev-open .hprev-list { display:block; }
-  .hprev-item { display:flex; align-items:flex-start; gap:8px; padding:7px 0; border-bottom:.5px solid var(--border); }
+  .hprev-item { display:flex; flex-direction:column; gap:4px; padding:10px 0; border-bottom:.5px solid var(--border); }
   .hprev-item:last-child { border-bottom:none; }
-  .hprev-ans { font-family:var(--serif); font-size:15px; font-weight:900; min-width:30px; flex-shrink:0; }
-  .hprev-ans.yes { color:var(--yes); } .hprev-ans.no { color:var(--no); }
-  .hprev-meta { font-family:var(--mono); font-size:10px; color:var(--muted); line-height:1.8; flex:1; min-width:0; }
-  .hprev-actions { opacity:0; transition:opacity .12s; flex-shrink:0; }
+  .hprev-ans { font-family:var(--serif); font-size:15px; font-weight:900; color:inherit; line-height:1.4; }
+  .hprev-ans.yes { color:var(--yes); } .hprev-ans.no { color:var(--no); } .hprev-ans.maybe { color:var(--amber); }
+  .hprev-ans.fortune-prev { font-family:var(--mono); font-size:11px; font-weight:400; font-style:italic; line-height:1.65; word-break:normal; overflow-wrap:break-word; }
+  .hprev-meta { font-family:var(--mono); font-size:10px; color:var(--muted); line-height:1.8; }
+  .hprev-actions { display:flex; gap:6px; opacity:0; transition:opacity .12s; }
   .hprev-item:hover .hprev-actions { opacity:1; }
 
   /* How it works */
@@ -302,12 +311,12 @@
   <div class="mode-row">
     <span class="mode-label">mode</span>
     <select id="mode-select" onchange="onModeChange()">
-      <option value="yesno">Yes / No</option>
-      <option value="8ball">Magic 8-Ball (20 answers)</option>
-      <option value="multichoice">Multiple Choice</option>
-      <option value="dice">Roll the Dice</option>
       <option value="silent">Pure Draw — no input</option>
-      <option value="fortune">Fortune</option>
+      <option value="yesno">Yes / No — type your question</option>
+      <option value="multichoice">Multiple Choice</option>
+      <option value="8ball">Magic 8-Ball (20 answers)</option>
+      <option value="dice">Roll the Dice</option>
+      <option value="fortune">Fortune Cookie</option>
     </select>
   </div>
   <div class="hardcore-row">
@@ -347,11 +356,9 @@
   </div>
 
   <!-- Silent mode note -->
-  <div id="silent-panel" style="display:none; margin-bottom:1rem; font-family:var(--mono); font-size:11px; color:var(--muted); line-height:1.7; padding:10px 12px; background:var(--surface2); border:.5px solid var(--border); border-radius:8px;">
-    No input needed. Press Ask and the chain draws.
-  </div>
+  <div id="silent-panel" style="display:none;"></div>
 
-  <div id="question-section">
+  <div id="question-section" style="display:none;">
     <div class="section-title" style="margin-bottom:8px;">your question</div>
     <input type="text" id="qin" placeholder="What should the oracle answer?" maxlength="200"/>
   </div>
@@ -371,17 +378,7 @@
   </div>
   <div class="info-grid" id="info-grid"></div>
 
-  <div class="field-row">
-    <div class="field-key">block hash (entropy source) <button class="copy-btn" onclick="copyField('bi-bh',this)">⎘ copy</button></div>
-    <div class="field-val truncated" id="bi-bh" onclick="toggleExpand(this)">—</div>
-    <div class="expand-hint">click to expand · click again to collapse</div>
-  </div>
-  <div class="field-row">
-    <div class="field-key">merkle root <button class="copy-btn" onclick="copyField('bi-mr',this)">⎘ copy</button></div>
-    <div class="field-val truncated" id="bi-mr" onclick="toggleExpand(this)">—</div>
-  </div>
-
-  <hr class="div"/>
+  <hr class="div" style="margin-top:4px;"/>
   <button class="tog-btn" id="mtog" onclick="toggleSection('merkle-section','mtog','merkle tree')">▶ show merkle tree</button>
   <div id="merkle-section" style="display:none;">
     <div id="merkle-svg-wrap"></div>
@@ -626,23 +623,36 @@ function makeField(key, value, full=null) {
 }
 
 function buildVerifyText(e) {
-  const isYesNo = !e.modeName || e.modeName === 'Yes / No';
-  const method = isYesNo
-    ? 'Count 1-bits in Merkle root → EVEN = YES, ODD = NO'
-    : e.options
-      ? `BigInt("0x" + merkleRoot) % ${e.options.length} → index into options`
-      : 'BigInt("0x" + merkleRoot) % 20 → index into 20-answer table';
+  const mode = e.modeName || 'Yes / No';
+  let method;
+  if (mode === 'Yes / No')
+    method = 'Count 1-bits in Merkle root → EVEN = YES, ODD = NO';
+  else if (mode === 'Multiple Choice')
+    method = `BigInt("0x" + merkleRoot) % ${(e.options||[]).length} → index into ${(e.options||[]).length} options`;
+  else if (mode === 'Magic 8-Ball')
+    method = 'BigInt("0x" + merkleRoot) % 20 → index into 20-answer table';
+  else if (mode === 'Roll the Dice')
+    method = `BigInt("0x" + merkleRoot) % range + min → number in range`;
+  else if (mode === 'Pure Draw')
+    method = 'Count 1-bits in Merkle root → EVEN = YES, ODD = NO (no question input)';
+  else if (mode === 'Fortune Cookie')
+    method = `BigInt("0x" + merkleRoot) % 25 → index into 25-message table`;
+  else
+    method = 'BigInt("0x" + merkleRoot) % n → index into answer table';
+
   const lines = [
     'VERIFICATION DATA',
     '=================',
-    'Question   : '+(e.question||'—'),
+    'Question   : '+(e.question && !e.question.startsWith('__') ? e.question : '—'),
     'Answer     : '+e.answer,
-    'Mode       : '+(e.modeName||'Yes / No'),
+    'Mode       : '+mode,
   ];
-  if (e.options && e.options.length) {
+  if (e.options && e.options.length && mode === 'Multiple Choice') {
     lines.push('Options    :');
     e.options.forEach((o, i) => lines.push(`  ${i+1}. ${o}`));
   }
+  if (e.options && e.options.length && mode === 'Roll the Dice')
+    lines.push('Range      : '+e.options[0]);
   lines.push(
     'Timestamp  : '+e.dt,
     'Question # : '+e.n,
@@ -664,6 +674,7 @@ function loadH() { try { return JSON.parse(localStorage.getItem('oracle_h')||'[]
 function saveH(e) { try { localStorage.setItem('oracle_h', JSON.stringify(e)); } catch {} }
 function normQ(q) { return (q||'').trim().toLowerCase(); }
 
+function clearH() { saveH([]); renderH([]); }
 function deleteGroup(key) { saveH(loadH().filter(e=>normQ(e.question)!==key)); renderH(loadH()); }
 function deleteEntry(entryN) { saveH(loadH().filter(e=>e.n!==entryN)); renderH(loadH()); }
 
@@ -698,7 +709,9 @@ function renderH(entries) {
 
   l.innerHTML=groups.map((g,gi) => {
     const gid='hg-'+gi, e=g.latest;
-    const ansCls = e.tone || (e.answer==='YES'?'yes':e.answer==='NO'?'no':'maybe');
+    const isFortune = e.modeName === 'Fortune Cookie';
+    const ansCls = isFortune ? 'fortune-entry' : (e.tone || (e.answer==='YES'?'yes':e.answer==='NO'?'no':'maybe'));
+    const ansStyle = isFortune && e.color ? ` style="color:${e.color}"` : '';
     const vtext = buildVerifyText(e);
     verifyTexts.set(gid, vtext);
     const qDisplay=e.question
@@ -706,14 +719,16 @@ function renderH(entries) {
       :`<em style="color:var(--muted);font-size:12px;">no question entered</em>`;
 
     const prevHtml=g.prev.map((pe,pi)=>{
-      const pAnsCls=pe.tone||(pe.answer==='YES'?'yes':pe.answer==='NO'?'no':'maybe');
+      const isPrevFortune = pe.modeName === 'Fortune Cookie';
+      const pAnsCls = isPrevFortune ? 'hprev-ans fortune-prev' : ('hprev-ans '+(pe.tone||(pe.answer==='YES'?'yes':pe.answer==='NO'?'no':'maybe')));
+      const pAnsStyle = isPrevFortune && pe.color ? ` style="color:${pe.color}"` : '';
       const prevKey = gid+'-p'+pi;
       verifyTexts.set(prevKey, buildVerifyText(pe));
       return `<div class="hprev-item">
-        <div class="hprev-ans ${pAnsCls}">${pe.answer}</div>
+        <div class="${pAnsCls}"${pAnsStyle}>${escHTML(pe.answer)}</div>
         <div class="hprev-meta">${pe.dt} · question #${pe.n} · ${pe.src}<br/>${sh(pe.hash)}</div>
         <div class="hprev-actions">
-          <button class="copy-btn" onclick="event.stopPropagation();copyVerify('${prevKey}',this)" style="margin-right:4px;">⎘</button>
+          <button class="copy-btn" onclick="event.stopPropagation();copyVerify('${prevKey}',this)">⎘</button>
           <button class="btn-del" onclick="event.stopPropagation();deleteEntry(${pe.n})">delete</button>
         </div>
       </div>`;
@@ -724,10 +739,10 @@ function renderH(entries) {
           onclick="event.stopPropagation();toggleGroup('${gid}','prev')">▶ ${g.prev.length} previous attempt${g.prev.length>1?'s':''}</button>`
       :'';
 
-    return `<div class="hgroup" id="${gid}">
+    return `<div class="hgroup${isFortune?' is-fortune':''}" id="${gid}">
       <div class="hprimary" onclick="toggleGroup('${gid}','detail')">
-        <div class="hist-ans ${ansCls}">${e.answer}</div>
-        <div style="flex:1;min-width:0;">
+        <div class="hist-ans ${ansCls}"${ansStyle}>${escHTML(e.answer)}</div>
+        <div style="flex:1;min-width:0;${isFortune?'display:none':''}">
           ${qDisplay}
           <div class="hmeta">${e.dt} · question #${e.n} · ${e.src}${e.modeName?' · '+e.modeName:''}<br/>${sh(e.hash)}</div>
           <div style="display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap;">
@@ -736,6 +751,12 @@ function renderH(entries) {
             ${prevToggle}
           </div>
         </div>
+        ${isFortune ? `<div style="width:100%"><div class="hmeta">${e.dt} · ${e.src} · ${e.modeName}<br/>${sh(e.hash)}</div>
+          <div style="display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap;">
+            <button class="btn-expand" id="${gid}-detailbtn"
+              onclick="event.stopPropagation();toggleGroup('${gid}','detail')">▼ show details</button>
+            ${prevToggle}
+          </div></div>` : ''}
         <div class="hactions" onclick="event.stopPropagation();">
           <button class="btn-del" onclick="deleteGroup('${g.k.replace(/'/g,"\\'")}')">delete</button>
         </div>
@@ -826,7 +847,8 @@ const MODES = {
     pick() { return null; }
   },
   fortune: {
-    name: 'Fortune',
+    name: 'Fortune Cookie',
+    tones: ['yes', 'no', 'maybe'],
     messages: [
       "The hash was computed. The rest is your problem.",
       "You are not the first to ask. The root does not care.",
@@ -857,8 +879,11 @@ const MODES = {
     pick(root) {
       const n = BigInt(this.messages.length);
       const idx = Number(BigInt('0x' + root) % n);
+      // Derive hue from middle 4 chars of root → 0-359°, fixed sat/light for dark bg readability
+      const hue = Number(BigInt('0x' + root.slice(28, 32)) % 360n);
+      const color = `hsl(${hue}, 72%, 62%)`;
       const text = this.messages[idx];
-      return { text, tone: 'maybe', cat: 'fortune', method: `BigInt("0x" + merkleRoot) % ${this.messages.length} = ${idx}` };
+      return { text, tone: 'fortune', cat: 'fortune cookie', color, method: `BigInt("0x" + merkleRoot) % ${this.messages.length} = ${idx}` };
     }
   }
 };
@@ -1023,12 +1048,14 @@ function updatePlaceholder() {
   input.placeholder = PLACEHOLDERS[mode] || PLACEHOLDERS.yesno;
 }
 
-function alreadyAnswered(q) {
-  const key = normQ(q) || '__no_question__';
-  if (!hardcoreSession.has(key)) return null;
-  // Find the actual entry from history to show in protest
+function alreadyAnswered(sessionKey, modeKey, hcKey) {
+  if (!hardcoreSession.has(sessionKey)) return null;
+  // Find the most recent history entry for this mode+question
   const hist = loadH();
-  return hist.slice().reverse().find(e => (normQ(e.question) || '__no_question__') === key) || { answer: '?', n: '?' };
+  return hist.slice().reverse().find(e =>
+    e.modeName === MODES[modeKey].name &&
+    (normQ(e.question) || '__no_question__') === (normQ(hcKey) || '__no_question__')
+  ) || { answer: '?', n: '?', tone: 'no' };
 }
 
 function showProtest(q, prev) {
@@ -1099,8 +1126,16 @@ async function ask() {
               : modeKey === 'silent'       ? '__silent__'
               : modeKey === 'fortune'      ? '__fortune__'
               : q;
-  if (isHardcore()) {
-    const prev = alreadyAnswered(hcKey);
+  // Prefix with mode so the same question in different modes doesn't conflict
+  const hcSessionKey = modeKey + ':' + (normQ(hcKey) || '__no_question__');
+  // Hardcore fires when there is something meaningful to lock — input-free modes always qualify
+  const noInputMode = modeKey === 'silent' || modeKey === 'fortune' || modeKey === 'dice';
+  const hcHasMeaningfulInput = noInputMode
+    || (modeKey === 'multichoice' && mcOptions.length >= 2)
+    || (modeKey === '8ball')   // 8-ball always has a defined outcome to lock
+    || q !== '';               // text-input modes: only lock when a question is typed
+  if (isHardcore() && hcHasMeaningfulInput) {
+    const prev = alreadyAnswered(hcSessionKey, modeKey, hcKey);
     if (prev) { showProtest(hcKey, prev); return; }
   }
 
@@ -1131,6 +1166,10 @@ async function ask() {
     st('');
     ansEl.className=`answer-main fade-in ${pick.tone} ${sizeClass(pick.text)}`;
     ansEl.textContent=pick.text;
+    if (pick.color) ansEl.style.color = pick.color;
+    else ansEl.style.color = '';
+    if (modeKey === 'fortune') ansEl.style.fontFamily = 'var(--mono)';
+    else ansEl.style.fontFamily = '';
     if (pick.cat) { catEl.textContent=pick.cat; catEl.className='answer-cat '+pick.tone; }
 
     // Sub-label under answer
@@ -1152,12 +1191,9 @@ async function ask() {
       makeField('slot in epoch', blk.epoch_slot?blk.epoch_slot.toLocaleString('en-GB'):'—'),
       makeField('absolute slot', blk.slot?blk.slot.toLocaleString('en-GB'):'—'),
       makeField('counter leaf', '#'+n),
+      makeField('block hash', blk.hash, blk.hash),
+      makeField('merkle root', root, root),
     ].join('');
-
-    const bhEl=document.getElementById('bi-bh');
-    bhEl.textContent=sh(blk.hash); bhEl.dataset.full=blk.hash; bhEl.className='field-val truncated';
-    const mrEl=document.getElementById('bi-mr');
-    mrEl.textContent=sh(root); mrEl.dataset.full=root; mrEl.className='field-val truncated';
 
     document.getElementById('merkle-svg-wrap').innerHTML=renderMerkleSVG(levels,leafLabels,lh);
 
@@ -1169,7 +1205,7 @@ async function ask() {
     }).join('');
     document.getElementById('bi-bi').textContent=`ones: ${t1} · zeros: ${t0} · ${pick.method}`;
 
-    const entry={ question: hcKey, answer:pick.text, tone:pick.tone, cat:pick.cat||'', height:blk.height, epoch:blk.epoch, hash:blk.hash, dt, n, src:blk._src, root, modeName:mode.name, options: mcOptions.length ? mcOptions : (diceRange ? [`${diceRange.min}–${diceRange.max}`] : null) };
+    const entry={ question: hcKey, answer:pick.text, tone:pick.tone, cat:pick.cat||'', color:pick.color||null, height:blk.height, epoch:blk.epoch, hash:blk.hash, dt, n, src:blk._src, root, modeName:mode.name, options: mcOptions.length ? mcOptions : (diceRange ? [`${diceRange.min}–${diceRange.max}`] : null) };
     document.getElementById('verify-block').textContent=buildVerifyText(entry);
 
     const bp=document.getElementById('bpanel');
@@ -1177,7 +1213,7 @@ async function ask() {
 
     const hist=loadH(); hist.push(entry); saveH(hist); renderH(hist);
     // Register this key in hardcore session so next ask is blocked
-    if (isHardcore()) hardcoreSession.add(normQ(hcKey) || '__no_question__');
+    if (isHardcore() && hcHasMeaningfulInput) hardcoreSession.add(hcSessionKey);
 
   } catch(e) {
     ansEl.className='answer-main no size-xl'; ansEl.textContent='!'; st('error: '+e.message);
@@ -1187,8 +1223,8 @@ async function ask() {
 document.getElementById('qin').addEventListener('keydown', e=>{ if(e.key==='Enter') ask(); });
 
 (function(){
-  updatePlaceholder();
-  onHardcoreChange(); // sync badge with default checked state
+  onModeChange(); // set correct panel/question visibility for default mode
+  onHardcoreChange();
   const hist=loadH();
   if(hist.length){
     n=Math.max(...hist.map(e=>e.n||0));
